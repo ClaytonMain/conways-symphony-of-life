@@ -12,7 +12,7 @@ import Conductor from "./Conductor";
 import Controls from "./Controls";
 import Conway from "./Conway";
 import DetectClick from "./DetectClick";
-import Grid from "./Grid";
+import Instrument from "./Instrument";
 
 enableMapSet();
 
@@ -35,8 +35,9 @@ function App() {
             <Canvas
                 orthographic
                 dpr={dpr}
-                camera={{ position: [0, 0, 10], zoom: 50 }}
+                camera={{ position: [0, 0, 10], zoom: 70 }}
             >
+                {/* <Perf position={"top-left"} /> */}
                 <OrbitControls
                     makeDefault
                     enableRotate={false}
@@ -46,8 +47,8 @@ function App() {
                     minPolarAngle={Math.PI / 2}
                     target0={new THREE.Vector3(0, 0, 0)}
                     mouseButtons={{
-                        LEFT: THREE.MOUSE.PAN,
-                        MIDDLE: undefined,
+                        LEFT: undefined,
+                        MIDDLE: THREE.MOUSE.PAN,
                         RIGHT: undefined,
                     }}
                     // screenSpacePanning
@@ -75,7 +76,7 @@ function App() {
                         args={[bgColor]}
                     />
                     <ambientLight intensity={0.5} />
-                    <Grid />
+                    <Instrument />
                     <Conductor />
                     <Conway />
                     <Controls />

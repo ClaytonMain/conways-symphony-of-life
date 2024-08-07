@@ -1,71 +1,24 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
+import { drumTypes } from "./constants";
+import { DrumType } from "./sharedTypes";
 import { useGridStore } from "./useGridStore";
 
-// const notes: Record<number, string> = {
-//     0: "C5",
-//     1: "E5",
-//     2: "G5",
-//     3: "D5",
-//     4: "F5",
-//     5: "A6",
-//     6: "E5",
-//     7: "G5",
-//     8: "B6",
-//     9: "F5",
-//     10: "A6",
-//     11: "C6",
-//     12: "G5",
-//     13: "B6",
-//     14: "D6",
-//     15: "A6",
-//     16: "C6",
-//     17: "E6",
-//     18: "B6",
-//     19: "D6",
-//     20: "F6",
-//     21: "C6",
-//     22: "E6",
-//     23: "G6",
-//     24: "D6",
-// };
-
-const notes: Record<number, string> = {
-    0: "C2",
-    1: "D2",
-    2: "E2",
-    3: "F2",
-    4: "G2",
-    5: "A3",
-    6: "B3",
-    7: "C3",
-    8: "D3",
-    9: "E3",
-    10: "F3",
-    11: "G3",
-    12: "A4",
-    13: "B4",
-    14: "C4",
-    15: "D4",
-    16: "E4",
-    17: "F4",
-    18: "G4",
-    19: "A5",
-    20: "B5",
-    21: "C5",
-    22: "D5",
-    23: "E5",
-    24: "F5",
-};
-
 export default function Conductor() {
-    const bpm = useGridStore((state) => state.bpm);
-    const cellsPerBeat = useGridStore((state) => state.cellsPerBeat);
+    const barsPerMinute = useGridStore((state) => state.barsPerMinute);
+    const notesPerBar = useGridStore((state) => state.notesPerBar);
     const animationState = useGridStore((state) => state.animationState);
     const dimensionX = useGridStore((state) => state.dimensionX);
     const dimensionY = useGridStore((state) => state.dimensionY);
     const sequenceColumnRef = useRef(0);
+    const changeActiveConfigEveryNNotes = useGridStore(
+        (state) => state.changeActiveConfigEveryNNotes
+    );
+    const changeActiveConfigCountRef = useRef(0);
+    const handleAutoChangeActiveConfig = useGridStore(
+        (state) => state.handleAutoChangeActiveConfig
+    );
 
     const elapsedBpm = useRef(0);
 
@@ -74,10 +27,22 @@ export default function Conductor() {
     const [synth, setSynth] = useState<Tone.PolySynth | null>(
         useGridStore.getState().synth
     );
+    const [drums, setDrums] = useState<Tone.Sampler | null>(
+        useGridStore.getState().drums
+    );
     const attack = useGridStore((state) => state.attack);
     const decay = useGridStore((state) => state.decay);
     const sustain = useGridStore((state) => state.sustain);
     const release = useGridStore((state) => state.release);
+
+    const activeConfig = useGridStore((state) => state.activeConfig);
+    const activeConfigRef = useRef(useGridStore.getState().activeConfig);
+
+    const drumNoteMap: Record<DrumType, "A1" | "A2" | "A3"> = {
+        Kick: "A1",
+        Snare: "A2",
+        HiHat: "A3",
+    };
 
     useEffect(() => {
         if (!synth) return;
@@ -92,6 +57,16 @@ export default function Conductor() {
     }, [attack, decay, sustain, release, synth]);
 
     useEffect(() => {
+        Tone.getTransport().timeSignature = notesPerBar;
+    }, [barsPerMinute, notesPerBar]);
+
+    useEffect(() => {
+        if (activeConfig !== activeConfigRef.current) {
+            activeConfigRef.current = activeConfig;
+        }
+    }, [activeConfig]);
+
+    useEffect(() => {
         if (userHasClicked) {
             Tone.start().then(() => {
                 const _synth = new Tone.PolySynth(Tone.Synth, {
@@ -99,6 +74,7 @@ export default function Conductor() {
                         // sawtooth, sine, square, triangle
                         type: "square",
                     },
+                    volume: -10,
                     envelope: {
                         attack: attack,
                         decay: decay,
@@ -106,10 +82,20 @@ export default function Conductor() {
                         release: release,
                     },
                 }).toDestination();
+                const _drums = new Tone.Sampler({
+                    urls: {
+                        [drumNoteMap.Kick]: "audio/Cassette808_BD02.wav",
+                        [drumNoteMap.Snare]: "audio/Cassette808_Snr01.wav",
+                        [drumNoteMap.HiHat]: "audio/Cassette808_HH_01.wav",
+                    },
+                    volume: 0,
+                }).toDestination();
                 setSynth(_synth);
+                setDrums(_drums);
                 useGridStore.setState((state) => {
                     state.audioInitialized = true;
                     state.synth = _synth;
+                    state.drums = _drums;
                 });
             });
         }
@@ -127,8 +113,20 @@ export default function Conductor() {
         /**
          * Sequencer timing.
          */
-        if (elapsedBpm.current >= 60 / bpm / cellsPerBeat) {
+        if (elapsedBpm.current >= 60 / barsPerMinute / notesPerBar) {
             elapsedBpm.current = 0;
+
+            if (changeActiveConfigEveryNNotes > 0) {
+                if (
+                    changeActiveConfigCountRef.current >=
+                    changeActiveConfigEveryNNotes
+                ) {
+                    activeConfigRef.current = handleAutoChangeActiveConfig();
+                    changeActiveConfigCountRef.current = 0;
+                }
+                changeActiveConfigCountRef.current++;
+            }
+
             const currentSequenceColumn =
                 useGridStore.getState().currentSequenceColumn;
             if (currentSequenceColumn === null) {
@@ -145,18 +143,34 @@ export default function Conductor() {
                     (sequenceColumnRef.current + 1) % dimensionX;
             }
             const cells = useGridStore.getState().cells;
+            const drumCells = useGridStore.getState().drumCells;
             const played: Array<string | number> = [];
-            const noteConfigs = useGridStore.getState().noteConfigs;
+            const currentNoteConfigs =
+                useGridStore.getState().noteConfigs[activeConfigRef.current];
+
             for (let i = 0; i < dimensionY; i++) {
                 const cell = cells[`${sequenceColumnRef.current},${i}`];
                 if (
                     cell.alive &&
-                    !played.includes(noteConfigs[0][i].note) &&
+                    !played.includes(currentNoteConfigs[i % dimensionY].note) &&
                     synth!.activeVoices < synth!.maxPolyphony &&
-                    noteConfigs[0][i].enabled
+                    currentNoteConfigs[i % dimensionY].enabled
                 ) {
-                    played.push(noteConfigs[0][i].note);
-                    synth!.triggerAttackRelease(noteConfigs[0][i].note, "16n");
+                    played.push(currentNoteConfigs[i % dimensionY].note);
+                    synth!.triggerAttackRelease(
+                        currentNoteConfigs[i % dimensionY].note,
+                        `${notesPerBar}n`
+                    );
+                }
+            }
+            for (const drumType of drumTypes) {
+                const drumCell =
+                    drumCells[`${drumType},${sequenceColumnRef.current}`];
+                if (drumCell.alive) {
+                    drums!.triggerAttackRelease(
+                        drumNoteMap[drumType],
+                        `${notesPerBar}n`
+                    );
                 }
             }
         }

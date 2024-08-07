@@ -1,4 +1,10 @@
-import { GenerateNoteConfigsProps, Note, NoteConfig } from "./sharedTypes";
+import { initialDimensions } from "./constants";
+import {
+    GenerateNoteConfigsProps,
+    Note,
+    NoteAndOctave,
+    NoteConfig,
+} from "./sharedTypes";
 
 const notes: Note[] = [
     "C",
@@ -15,25 +21,42 @@ const notes: Note[] = [
     "B",
 ];
 
-export function generateNoteConfigs({
+const minMaxOctaves = [-4, 11];
+
+// const notePositions: Record<Note, number> = {
+//     Cb: 11,
+//     C: 0,
+//     "C#": 1,
+//     Db: 1,
+//     D: 2,
+//     "D#": 3,
+//     Eb: 3,
+//     E: 4,
+//     "E#": 5,
+//     Fb: 4,
+//     F: 5,
+//     "F#": 6,
+//     Gb: 6,
+//     G: 7,
+//     "G#": 8,
+//     Ab: 8,
+//     A: 9,
+//     "A#": 10,
+//     Bb: 10,
+//     B: 11,
+//     "B#": 0,
+// };
+
+function mod(n: number, m: number) {
+    return ((n % m) + m) % m;
+}
+
+function generateNoteConfigs({
     startingNote,
+    numberOfNotes,
     startingOctave = 2,
-    numberOfNotes = 25,
     stepSizes = "major",
-    enabledArray = [
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-        true,
-        false,
-    ],
+    enabledArray = [true, false, true, false, true, false, false],
 }: GenerateNoteConfigsProps) {
     const stepSizesArray = Array.isArray(stepSizes)
         ? stepSizes
@@ -54,9 +77,11 @@ export function generateNoteConfigs({
             enabled: enabledArray[currentEnabledIndex],
         });
         currentNoteIndex += stepSizesArray[currentStepSizesArrayIndex];
-        if (currentNoteIndex >= notes.length) {
-            currentNoteIndex -= notes.length;
-            currentOctave++;
+        if (currentNoteIndex >= notes.length || currentNoteIndex < 0) {
+            currentOctave +=
+                (currentNoteIndex < 0 ? -1 : 1) *
+                Math.floor(Math.abs(currentNoteIndex) / notes.length);
+            currentNoteIndex = mod(currentNoteIndex, notes.length);
         }
         currentNote = notes[currentNoteIndex];
         currentEnabledIndex++;
@@ -68,9 +93,246 @@ export function generateNoteConfigs({
     return noteConfigs;
 }
 
+interface RepeatNoteConfigsProps {
+    noteConfigsToRepeat: Array<NoteConfig>;
+    numberOfNotes: number;
+}
+
+function repeatNoteConfigs({
+    noteConfigsToRepeat,
+    numberOfNotes,
+}: RepeatNoteConfigsProps) {
+    const noteConfigs: Array<NoteConfig> = [];
+    for (let i = 0; i < numberOfNotes; i++) {
+        noteConfigs.push(noteConfigsToRepeat[i % noteConfigsToRepeat.length]);
+    }
+    return noteConfigs;
+}
+
+interface RepeatChordSequenceProps {
+    chordSequence: Array<[Note, number]>;
+    numberOfNotes: number;
+    maxRepeat?: number;
+    startingOctave?: number;
+    relativeOctaveChangeOnRepeat?: number;
+    gridStartingPosition?: number;
+}
+
+function repeatChordSequence({
+    chordSequence,
+    numberOfNotes,
+    maxRepeat = -1,
+    startingOctave = 1,
+    relativeOctaveChangeOnRepeat = 1,
+    gridStartingPosition = 0,
+}: RepeatChordSequenceProps) {
+    const noteConfigs: Array<NoteConfig> = [];
+    let currentOctave = startingOctave;
+    let currentChordSequenceIndex = 0;
+    let repeatCount = 0;
+
+    for (let i = 0; i < gridStartingPosition; i++) {
+        currentChordSequenceIndex--;
+        if (currentChordSequenceIndex < 0) {
+            currentOctave -= relativeOctaveChangeOnRepeat;
+            currentChordSequenceIndex = chordSequence.length - 1;
+        }
+    }
+
+    let noteEnabled;
+    let chordNote;
+    let chordRelativeOctave;
+    let chordOctave;
+    for (let i = 0; i < numberOfNotes; i++) {
+        chordNote = chordSequence[currentChordSequenceIndex][0];
+        chordRelativeOctave = chordSequence[currentChordSequenceIndex][1];
+        chordOctave = Math.min(
+            Math.max(currentOctave + chordRelativeOctave, minMaxOctaves[0]),
+            minMaxOctaves[1]
+        );
+        if (i < gridStartingPosition) {
+            noteEnabled = false;
+        } else {
+            noteEnabled = maxRepeat >= 0 ? repeatCount <= maxRepeat : true;
+        }
+        noteConfigs.push({
+            note: `${chordNote}${chordOctave}` as NoteAndOctave,
+            enabled: noteEnabled,
+        });
+        currentChordSequenceIndex++;
+        if (currentChordSequenceIndex >= chordSequence.length) {
+            currentOctave += relativeOctaveChangeOnRepeat;
+            currentChordSequenceIndex = 0;
+            if (noteEnabled) repeatCount++;
+        }
+    }
+
+    // let currentOctave = startingOctave;
+    // let currentNoteIndex = 0;
+    // let repeatCount = 0;
+    // for (let i = 0; i < startingPosition; i++) {
+    //     currentNoteIndex--;
+    //     if (currentNoteIndex < 0) {
+    //         currentOctave--;
+    //         currentNoteIndex = chordSequence.length - 1;
+    //     }
+    // }
+    // for (let i = 0; i < numberOfNotes; i++) {
+    //     noteConfigs.push({
+    //         note: `${chordSequence[currentNoteIndex]}${currentOctave}` as NoteAndOctave,
+    //         enabled:
+    //             i >= startingPosition &&
+    //             (maxRepeat > 0 ? repeatCount <= maxRepeat : true),
+    //     });
+    //     currentNoteIndex++;
+    //     if (currentNoteIndex >= chordSequence.length) {
+    //         currentOctave += increaseOctaveByOnRepeat;
+    //         currentNoteIndex = 0;
+    //         repeatCount++;
+    //     }
+    // }
+    return noteConfigs;
+}
+
 export const defaultNoteConfigs: Array<Array<NoteConfig>> = [
+    repeatChordSequence({
+        chordSequence: [
+            ["A#", 0],
+            ["F", 1],
+            ["C#", 2],
+            ["C#", 2],
+            ["F#", 2],
+        ],
+        numberOfNotes: initialDimensions[1],
+        startingOctave: 1,
+        relativeOctaveChangeOnRepeat: 1,
+    }),
+    repeatChordSequence({
+        chordSequence: [
+            ["B", 0],
+            ["F#", 1],
+            ["C#", 2],
+            ["D#", 2],
+            ["F#", 2],
+        ],
+        numberOfNotes: initialDimensions[1],
+        startingOctave: 1,
+        relativeOctaveChangeOnRepeat: 1,
+    }),
+    repeatChordSequence({
+        chordSequence: [
+            ["C#", 1],
+            ["G#", 1],
+            ["C#", 2],
+            ["F", 2],
+            ["F#", 2],
+        ],
+        numberOfNotes: initialDimensions[1],
+        startingOctave: 1,
+        relativeOctaveChangeOnRepeat: 1,
+    }),
+    repeatChordSequence({
+        chordSequence: [
+            ["D#", 1],
+            ["A#", 1],
+            ["C#", 2],
+            ["C#", 2],
+            ["F#", 2],
+        ],
+        numberOfNotes: initialDimensions[1],
+        startingOctave: 1,
+        relativeOctaveChangeOnRepeat: 1,
+    }),
+    // generateNoteConfigs({
+    //     startingNote: "C",
+    //     stepSizes: "major",
+    //     numberOfNotes: initialDimensions[1],
+    // }),
+    // generateNoteConfigs({
+    //     startingNote: "C",
+    //     stepSizes: "minor",
+    //     numberOfNotes: initialDimensions[1],
+    // }),
+    // generateNoteConfigs({
+    //     startingNote: "D",
+    //     stepSizes: "major",
+    //     numberOfNotes: initialDimensions[1],
+    // }),
+    // generateNoteConfigs({
+    //     startingNote: "D",
+    //     stepSizes: "minor",
+    //     numberOfNotes: initialDimensions[1],
+    // }),
     generateNoteConfigs({
-        startingNote: "C",
+        startingNote: "F",
         stepSizes: "major",
+        numberOfNotes: initialDimensions[1],
+    }),
+    generateNoteConfigs({
+        startingNote: "F",
+        stepSizes: "minor",
+        numberOfNotes: initialDimensions[1],
+    }),
+    // generateNoteConfigs({
+    //     startingNote: "Bb",
+    //     startingOctave: -3,
+    //     stepSizes: [7, 8, 5, -13, 8, 5, 4, -9, 5, 4, 7, -11, 4, 7, 8, -15],
+    //     enabledArray: [true],
+    // }),
+    repeatNoteConfigs({
+        noteConfigsToRepeat: [
+            { note: "A#1", enabled: true },
+            { note: "F2", enabled: true },
+            { note: "C#3", enabled: true },
+            { note: "F#3", enabled: true },
+            { note: "A#3", enabled: true },
+            { note: "F4", enabled: true },
+            { note: "C#5", enabled: true },
+            { note: "F#5", enabled: true },
+        ],
+        numberOfNotes: initialDimensions[1],
+    }),
+    repeatNoteConfigs({
+        noteConfigsToRepeat: [
+            { note: "B1", enabled: true },
+            { note: "F#2", enabled: true },
+            { note: "C#3", enabled: true },
+            { note: "D#3", enabled: true },
+            { note: "F#3", enabled: true },
+            { note: "B3", enabled: true },
+            { note: "F#4", enabled: true },
+            { note: "C#5", enabled: true },
+            { note: "D#5", enabled: true },
+            { note: "F#5", enabled: true },
+        ],
+        numberOfNotes: initialDimensions[1],
+    }),
+    repeatNoteConfigs({
+        noteConfigsToRepeat: [
+            { note: "C#2", enabled: true },
+            { note: "G#2", enabled: true },
+            { note: "C#3", enabled: true },
+            { note: "F3", enabled: true },
+            { note: "F#3", enabled: true },
+            { note: "C#4", enabled: true },
+            { note: "G#4", enabled: true },
+            { note: "C#5", enabled: true },
+            { note: "F5", enabled: true },
+            { note: "F#5", enabled: true },
+        ],
+        numberOfNotes: initialDimensions[1],
+    }),
+    repeatNoteConfigs({
+        noteConfigsToRepeat: [
+            { note: "D#2", enabled: true },
+            { note: "A#2", enabled: true },
+            { note: "C#3", enabled: true },
+            { note: "F#3", enabled: true },
+            { note: "D#4", enabled: true },
+            { note: "A#4", enabled: true },
+            { note: "C#5", enabled: true },
+            { note: "F#5", enabled: true },
+        ],
+        numberOfNotes: initialDimensions[1],
     }),
 ];

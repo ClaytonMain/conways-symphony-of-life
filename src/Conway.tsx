@@ -4,17 +4,7 @@ import { CellRecord } from "./sharedTypes";
 import { useGridStore } from "./useGridStore";
 
 /**
- * Hmm... Maybe the Conductor should just control the music
- * and something else should control the ticks. Maybe "Conway".
- *
- * Also, it might make sense to have the Conductor play the notes too,
- * instead of allowing each Cell to play its own note. That way we can
- * avoid playing too many notes at once & avoid playing the same note
- * more than once.
- */
-
-/**
- * The Conductor controls the GoL calculations and sequencer timing.
+ * Conway controls all the logic for the Game of Life.
  */
 
 function getNeighborAddresses(
@@ -42,7 +32,7 @@ function initializeCells(dimensionX: number, dimensionY: number) {
     let alive;
     for (let i = 0; i < dimensionX; i++) {
         for (let j = 0; j < dimensionY; j++) {
-            alive = Math.random() > 0.9;
+            alive = Math.random() > 0.8;
             cells[`${i},${j}`] = {
                 x: i,
                 y: j,
@@ -53,6 +43,7 @@ function initializeCells(dimensionX: number, dimensionY: number) {
                     dimensionX,
                     dimensionY
                 ),
+                cellType: "normal",
             };
         }
     }
@@ -88,7 +79,7 @@ export default function Conway() {
         /**
          * Game of Life calculations.
          */
-        if (elapsedTpm.current >= 60 / tpm) {
+        if (tpm > 0 && elapsedTpm.current >= 60 / tpm) {
             elapsedTpm.current = 0;
             const cells = useGridStore.getState().cells;
             const updatedCells: Record<string, CellRecord> = {};
@@ -99,7 +90,10 @@ export default function Conway() {
                     0
                 );
                 if (cell.alive) {
-                    if (aliveNeighbors < 2 || aliveNeighbors > 3) {
+                    if (
+                        (aliveNeighbors < 2 || aliveNeighbors > 3) &&
+                        cell.cellType !== "invincible"
+                    ) {
                         updatedCells[cellAddress] = {
                             ...cell,
                             alive: false,

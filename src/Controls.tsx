@@ -1,17 +1,34 @@
 import { button, useControls } from "leva";
+import * as THREE from "three";
 import * as Tone from "tone";
 import { CellRecord } from "./sharedTypes";
 import { useGridStore } from "./useGridStore";
 
 export default function Controls() {
     const setAnimationState = useGridStore((state) => state.setAnimationState);
-    const setBpm = useGridStore((state) => state.setBpm);
-    const setCellsPerBeat = useGridStore((state) => state.setCellsPerBeat);
+    const setBarsPerMinute = useGridStore((state) => state.setBarsPerMinute);
+    const setNotesPerBar = useGridStore((state) => state.setNotesPerBar);
+    const notesPerBar = useGridStore((state) => state.notesPerBar);
     const setTpm = useGridStore((state) => state.setTpm);
+    const cellColors = useGridStore.getState().cellColors;
 
-    function handleBpmChange(value: number) {
-        setBpm(value);
-        Tone.getTransport().bpm.value = value;
+    function handleBarsPerMinuteChange(value: number) {
+        setBarsPerMinute(value);
+        Tone.getTransport().bpm.value = value * notesPerBar;
+    }
+
+    function handleCellColorChange(
+        color: string,
+        key:
+            | "alive"
+            | "alivePlaying"
+            | "aliveDisabled"
+            | "dead"
+            | "deadDisabled"
+    ) {
+        useGridStore.setState((state) => {
+            state.cellColors[key] = new THREE.Color(color);
+        });
     }
 
     useControls(() => ({
@@ -26,6 +43,12 @@ export default function Controls() {
                     modifiedCells[cellAddress] = {
                         ...cells[cellAddress],
                         alive: false,
+                        cellType: "normal",
+                    };
+                } else if (cells[cellAddress].cellType === "invincible") {
+                    modifiedCells[cellAddress] = {
+                        ...cells[cellAddress],
+                        cellType: "normal",
                     };
                 }
             }
@@ -37,11 +60,11 @@ export default function Controls() {
             });
         }),
         "Randomize Grid": button(() => {
-            setAnimationState("paused");
+            // setAnimationState("paused");
             const cells = useGridStore.getState().cells;
             const modifiedCells: Record<string, CellRecord> = {};
             for (const cellAddress in cells) {
-                const alive = Math.random() > 0.9;
+                const alive = Math.random() > 0.8;
                 if (cells[cellAddress].alive !== alive) {
                     modifiedCells[cellAddress] = {
                         ...cells[cellAddress],
@@ -56,23 +79,47 @@ export default function Controls() {
                 };
             });
         }),
-        BPM: {
-            value: useGridStore.getState().bpm,
+        "Set Diagonal Ascending": button(() => {
+            const cells = useGridStore.getState().cells;
+            const modifiedCells: Record<string, CellRecord> = {};
+            for (const cellAddress in cells) {
+                const [x, y] = cellAddress.split(",").map(Number);
+                if (x === y) {
+                    modifiedCells[cellAddress] = {
+                        ...cells[cellAddress],
+                        alive: true,
+                    };
+                } else if (cells[cellAddress].alive) {
+                    modifiedCells[cellAddress] = {
+                        ...cells[cellAddress],
+                        alive: false,
+                    };
+                }
+            }
+            useGridStore.setState((state) => {
+                state.cells = {
+                    ...state.cells,
+                    ...modifiedCells,
+                };
+            });
+        }),
+        "Bars Per Minute": {
+            value: useGridStore.getState().barsPerMinute,
             min: 30,
             max: 360,
             step: 1,
-            onEditEnd: handleBpmChange,
+            onEditEnd: handleBarsPerMinuteChange,
         },
-        "Cells Per Beat": {
-            value: useGridStore.getState().cellsPerBeat,
+        "Notes Per Bar": {
+            value: useGridStore.getState().notesPerBar,
             min: 1,
-            max: 32,
+            max: 16,
             step: 1,
-            onEditEnd: (value) => setCellsPerBeat(value),
+            onChange: (value) => setNotesPerBar(value),
         },
         TPM: {
             value: useGridStore.getState().tpm,
-            min: 60,
+            min: 0,
             max: 360,
             step: 1,
             onEditEnd: (value) => setTpm(value),
@@ -104,6 +151,26 @@ export default function Controls() {
             max: 1,
             step: 0.01,
             onChange: (value) => useGridStore.setState({ release: value }),
+        },
+        "Alive Color": {
+            value: `#${cellColors.alive.getHexString()}`,
+            onChange: (color) => handleCellColorChange(color, "alive"),
+        },
+        "Alive Playing Color": {
+            value: `#${cellColors.alivePlaying.getHexString()}`,
+            onChange: (color) => handleCellColorChange(color, "alivePlaying"),
+        },
+        "Alive Disabled Color": {
+            value: `#${cellColors.aliveDisabled.getHexString()}`,
+            onChange: (color) => handleCellColorChange(color, "aliveDisabled"),
+        },
+        "Dead Color": {
+            value: `#${cellColors.dead.getHexString()}`,
+            onChange: (color) => handleCellColorChange(color, "dead"),
+        },
+        "Dead Disabled Color": {
+            value: `#${cellColors.deadDisabled.getHexString()}`,
+            onChange: (color) => handleCellColorChange(color, "deadDisabled"),
         },
     }));
     return null;
