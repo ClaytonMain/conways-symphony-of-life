@@ -1,10 +1,11 @@
-import { Instance, Instances, Text, useTexture } from "@react-three/drei";
+import { Html, Instance, Instances, Text, useTexture } from "@react-three/drei";
 import { ThreeEvent, useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { drumTypes } from "./constants";
-import { CellColors, CellType, DrumCellRecord, DrumType } from "./sharedTypes";
-import { useGridStore } from "./useGridStore";
+import { drumTypes } from "../constants";
+import { CellColors, CellType, DrumCellRecord, DrumType } from "../sharedTypes";
+import { useGridStore } from "../useGridStore";
+import Controls from "./Controls";
 
 type PointerEventTypes = "down" | "over" | "out";
 
@@ -35,9 +36,13 @@ function Cell({
     const cellRecord = useGridStore.getState().cells[id];
     const [alive, setAlive] = useState<boolean>(cellRecord.alive);
     const [sequenceActive, setSequenceActive] = useState<boolean>(false);
-    const activeConfig = useGridStore((state) => state.activeConfig);
+    const currentNoteConfigCellIndex = useGridStore(
+        (state) => state.currentNoteConfigCellIndex
+    );
     const noteEnabled = useGridStore(
-        (state) => state.noteConfigs[activeConfig][y].enabled
+        (state) =>
+            state.noteConfigCells[currentNoteConfigCellIndex].noteConfigs[y]
+                .enabled
     );
 
     function handlePointerEvents({
@@ -53,6 +58,7 @@ function Cell({
         const ctrlKey = e.ctrlKey;
 
         if (["down", "over"].includes(pointerEventType)) {
+            if (useGridStore.getState().adjustingKnob) return;
             if (primaryMouse) {
                 if (!alive) {
                     setCellState(x, y, true);
@@ -145,9 +151,13 @@ function InvincibleCellDecorator({
     const [invincible, setInvincible] = useState<boolean>(
         cellRecord.cellType === "invincible"
     );
-    const activeConfig = useGridStore((state) => state.activeConfig);
+    const currentNoteConfigCellIndex = useGridStore(
+        (state) => state.currentNoteConfigCellIndex
+    );
     const noteEnabled = useGridStore(
-        (state) => state.noteConfigs[activeConfig][y].enabled
+        (state) =>
+            state.noteConfigCells[currentNoteConfigCellIndex].noteConfigs[y]
+                .enabled
     );
 
     useEffect(() => {
@@ -190,9 +200,13 @@ interface RowToggleProps {
 
 function RowToggle({ id, xOffset, yOffset, cellScale }: RowToggleProps) {
     const ref = useRef<THREE.Mesh>(null!);
-    const activeConfig = useGridStore((state) => state.activeConfig);
+    const currentNoteConfigCellIndex = useGridStore(
+        (state) => state.currentNoteConfigCellIndex
+    );
     const rowEnabled = useGridStore(
-        (state) => state.noteConfigs[activeConfig][id].enabled
+        (state) =>
+            state.noteConfigCells[currentNoteConfigCellIndex].noteConfigs[id]
+                .enabled
     );
     const cellColors = useGridStore((state) => state.cellColors);
     useFrame(() => {
@@ -225,7 +239,9 @@ function RowToggleBackground({
     yOffset,
     cellScale,
 }: RowToggleBackgroundProps) {
-    const activeConfig = useGridStore((state) => state.activeConfig);
+    const currentNoteConfigCellIndex = useGridStore(
+        (state) => state.currentNoteConfigCellIndex
+    );
     return (
         <Instance
             position={[-xOffset - 1.5, id - yOffset, -0.1]}
@@ -233,8 +249,11 @@ function RowToggleBackground({
             color={"#663300"}
             onClick={() => {
                 useGridStore.setState((state) => {
-                    state.noteConfigs[activeConfig][id].enabled =
-                        !state.noteConfigs[activeConfig][id].enabled;
+                    state.noteConfigCells[
+                        currentNoteConfigCellIndex
+                    ].noteConfigs[id].enabled =
+                        !state.noteConfigCells[currentNoteConfigCellIndex]
+                            .noteConfigs[id].enabled;
                 });
             }}
         />
@@ -256,8 +275,38 @@ function NoteConfigSelector({
     dimensionY,
     cellScale,
 }: NoteConfigSelectorProps) {
-    const activeConfig = useGridStore((state) => state.activeConfig);
+    const currentNoteConfigCellIndex = useGridStore(
+        (state) => state.currentNoteConfigCellIndex
+    );
+    const noteConfigCellEnabled = useGridStore(
+        (state) => state.noteConfigCells[id].enabled
+    );
     const cellColors = useGridStore((state) => state.cellColors);
+    function handlePointerEvents({
+        e,
+        pointerEventType,
+    }: {
+        e: ThreeEvent<PointerEvent>;
+        pointerEventType: PointerEventTypes;
+    }) {
+        const buttonsBinary = e.buttons.toString(2).padStart(5, "0");
+        const primaryMouse = buttonsBinary.charAt(4) === "1";
+        const secondaryMouse = buttonsBinary.charAt(3) === "1";
+
+        if (["down", "over"].includes(pointerEventType)) {
+            if (useGridStore.getState().adjustingKnob) return;
+            if (primaryMouse && currentNoteConfigCellIndex !== id) {
+                useGridStore.setState((state) => {
+                    state.currentNoteConfigCellIndex = id;
+                });
+            } else if (secondaryMouse) {
+                useGridStore.setState((state) => {
+                    state.noteConfigCells[id].enabled =
+                        !state.noteConfigCells[id].enabled;
+                });
+            }
+        }
+    }
     return (
         <Instance
             position={[
@@ -270,16 +319,48 @@ function NoteConfigSelector({
             ]}
             scale={[cellScale, cellScale, 0.1]}
             color={
-                activeConfig === id ? cellColors.alive : cellColors.deadDisabled
+                currentNoteConfigCellIndex === id
+                    ? cellColors.alivePlaying
+                    : noteConfigCellEnabled
+                    ? cellColors.alive
+                    : cellColors.dead
             }
-            onClick={() => {
-                if (activeConfig !== id) {
-                    useGridStore.setState((state) => {
-                        state.activeConfig = id;
-                    });
-                }
-            }}
+            onPointerDown={(e) =>
+                handlePointerEvents({ e, pointerEventType: "down" })
+            }
+            onPointerOver={(e) =>
+                handlePointerEvents({ e, pointerEventType: "over" })
+            }
         />
+    );
+}
+
+interface NoteConfigEditButtonProps {
+    xOffset: number;
+    yOffset: number;
+    dimensionY: number;
+}
+
+function NoteConfigEditButton({
+    xOffset,
+    yOffset,
+    dimensionY,
+}: NoteConfigEditButtonProps) {
+    function handleOnClick() {
+        useGridStore.setState((state) => {
+            state.editingNoteConfigIndex = state.currentNoteConfigCellIndex;
+        });
+    }
+    return (
+        <group
+            position={[-xOffset - (dimensionY / 5) * 2.5, -yOffset - 1.5, 0]}
+            onClick={handleOnClick}
+        >
+            <mesh>
+                <planeGeometry args={[dimensionY / 10, dimensionY / 10]} />
+                <meshBasicMaterial color={"blue"} />
+            </mesh>
+        </group>
     );
 }
 
@@ -289,23 +370,51 @@ interface RowNoteLabelsProps {
 }
 
 function RowNoteLabels({ xOffset, yOffset }: RowNoteLabelsProps) {
-    const activeConfig = useGridStore((state) => state.activeConfig);
-    const noteConfigs = useGridStore((state) => state.noteConfigs);
+    const currentNoteConfigCellIndex = useGridStore(
+        (state) => state.currentNoteConfigCellIndex
+    );
+    const noteConfigCells = useGridStore((state) => state.noteConfigCells);
+
+    function handleOnClick(noteIndex: number) {
+        console.log("clicked", noteIndex);
+        useGridStore.setState((state) => {
+            state.editingNoteIndices = [currentNoteConfigCellIndex, noteIndex];
+        });
+    }
 
     return (
         <>
-            {noteConfigs[activeConfig].map((noteConfig, i) => (
-                <Text
-                    key={i}
-                    position={[-xOffset - 2.5, -yOffset + i, 0]}
-                    color="black"
-                    scale={0.8}
-                    anchorX={"right"}
-                    fontWeight={"bold"}
-                >
-                    {noteConfig.note}
-                </Text>
-            ))}
+            {noteConfigCells[currentNoteConfigCellIndex].noteConfigs.map(
+                (noteConfig, i) => (
+                    <Html
+                        key={i}
+                        position={[-xOffset - 3.5, -yOffset + i, 0]}
+                        transform
+                        scale={2.2}
+                        style={{
+                            cursor: "pointer",
+                        }}
+                    >
+                        <div
+                            onClick={() => handleOnClick(i)}
+                            style={{
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                width: "2rem",
+                                height: "1rem",
+                                backgroundColor: "#5a260a",
+                                color: "#e3a143",
+                                fontWeight: "bold",
+                                borderRadius: "0.25rem",
+                                fontFamily: "monospace",
+                            }}
+                        >
+                            {noteConfig.note}
+                        </div>
+                    </Html>
+                )
+            )}
         </>
     );
 }
@@ -343,6 +452,7 @@ function DrumCell({
         const secondaryMouse = buttonsBinary.charAt(3) === "1";
 
         if (["down", "over"].includes(pointerEventType)) {
+            if (useGridStore.getState().adjustingKnob) return;
             if (primaryMouse && !alive) {
                 setDrumCellState(drumCellRecord.drumType, x, true);
             } else if (secondaryMouse && alive) {
@@ -410,7 +520,14 @@ function initializeDrumCells(dimensionX: number) {
             drumCells[`${drumType},${i}`] = {
                 x: i,
                 y: drumTypes.indexOf(drumType),
-                alive: false,
+                alive:
+                    drumType === "HiHat"
+                        ? true
+                        : drumType === "Kick"
+                        ? i % 4 === 0
+                        : drumType === "Snare"
+                        ? i % 4 === 2
+                        : false,
                 drumType: drumType,
             };
         }
@@ -574,6 +691,11 @@ export default function Instrument() {
                     />
                 ))}
             </Instances>
+            <NoteConfigEditButton
+                xOffset={xOffset}
+                yOffset={yOffset}
+                dimensionY={dimensionY}
+            />
             <RowNoteLabels
                 xOffset={xOffset}
                 yOffset={yOffset}
@@ -585,6 +707,7 @@ export default function Instrument() {
                 dimensionX={dimensionX}
                 cellColors={cellColors}
             />
+            <Controls instrumentScale={gridScale} />
         </group>
     );
 }

@@ -1,18 +1,20 @@
 import {
-    Environment,
+    Bounds,
     OrbitControls,
     PerformanceMonitor,
+    SizeProps,
 } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { enableMapSet } from "immer";
 import { Suspense, useState } from "react";
 import * as THREE from "three";
 import "./App.css";
-import Conductor from "./Conductor";
-import Controls from "./Controls";
-import Conway from "./Conway";
 import DetectClick from "./DetectClick";
-import Instrument from "./Instrument";
+import InstrumentStatesController from "./InstrumentStatesController";
+import PlayStateController from "./PlayStateController";
+import Sequencer from "./Sequencer";
+import ShortcutWrapper from "./ShortcutWrapper";
+import Timekeeper from "./Timekeeper";
 
 enableMapSet();
 
@@ -25,9 +27,30 @@ function App() {
     const [dpr, setDpr] = useState<number>(1.5);
     const bgColor = "#eeaa44";
     // const bgColor = "#1a191f";
-    const minPan = new THREE.Vector3(-5, -5, 0);
-    const maxPan = new THREE.Vector3(5, 5, 0);
+    const [minPan, setMinPan] = useState(new THREE.Vector3(-50, -50, 0));
+    const [maxPan, setMaxPan] = useState(new THREE.Vector3(50, 50, 0));
     const _v = new THREE.Vector3();
+
+    function handleOnFit(data: SizeProps) {
+        const centerX = data.center.x;
+        const centerY = data.center.y;
+        const boxXRange = data.box.max.x - data.box.min.x;
+        const boxYRange = data.box.max.y - data.box.min.y;
+        setMinPan(
+            new THREE.Vector3(
+                centerX - boxXRange / 2,
+                centerY - boxYRange / 2,
+                0
+            )
+        );
+        setMaxPan(
+            new THREE.Vector3(
+                centerX + boxXRange / 2,
+                centerY + boxYRange / 2,
+                0
+            )
+        );
+    }
 
     return (
         <>
@@ -35,7 +58,6 @@ function App() {
             <Canvas
                 orthographic
                 dpr={dpr}
-                camera={{ position: [0, 0, 10], zoom: 70 }}
             >
                 {/* <Perf position={"top-left"} /> */}
                 <OrbitControls
@@ -70,16 +92,29 @@ function App() {
                     onDecline={() => setDpr(1)}
                 />
                 <Suspense fallback={null}>
-                    <Environment preset="city" />
-                    <color
-                        attach="background"
-                        args={[bgColor]}
-                    />
-                    <ambientLight intensity={0.5} />
-                    <Instrument />
-                    <Conductor />
-                    <Conway />
-                    <Controls />
+                    <ShortcutWrapper>
+                        {/* <Environment preset="city" /> */}
+                        <color
+                            attach="background"
+                            args={[bgColor]}
+                        />
+                        <ambientLight intensity={0.5} />
+                        <Timekeeper />
+                        <PlayStateController />
+                        <InstrumentStatesController />
+                        <Bounds
+                            fit
+                            clip
+                            maxDuration={0}
+                            onFit={handleOnFit}
+                            margin={2}
+                        >
+                            <Sequencer />
+                        </Bounds>
+                        {/* <Instrument />
+                        <Conductor />
+                        <Conway /> */}
+                    </ShortcutWrapper>
                 </Suspense>
             </Canvas>
         </>

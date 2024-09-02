@@ -1,7 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
-import { CellRecord } from "./sharedTypes";
-import { useGridStore } from "./useGridStore";
+import { CellRecord } from "../sharedTypes";
+import { useGridStore } from "../useGridStore";
 
 /**
  * Conway controls all the logic for the Game of Life.

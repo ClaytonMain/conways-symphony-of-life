@@ -1,21 +1,47 @@
+import { useKeyboardControls } from "@react-three/drei";
 import { button, useControls } from "leva";
+import { useEffect } from "react";
 import * as THREE from "three";
 import * as Tone from "tone";
-import { CellRecord } from "./sharedTypes";
-import { useGridStore } from "./useGridStore";
+import Knob from "../Knob";
+import { CellRecord, ShortcutEnum } from "../sharedTypes";
+import { useGridStore } from "../useGridStore";
 
-export default function Controls() {
+interface ControlsProps {
+    instrumentScale?: number;
+}
+export default function Controls({ instrumentScale = 1 }: ControlsProps) {
     const setAnimationState = useGridStore((state) => state.setAnimationState);
     const setBarsPerMinute = useGridStore((state) => state.setBarsPerMinute);
     const setNotesPerBar = useGridStore((state) => state.setNotesPerBar);
     const notesPerBar = useGridStore((state) => state.notesPerBar);
-    const setTpm = useGridStore((state) => state.setTpm);
     const cellColors = useGridStore.getState().cellColors;
+    const dimensionY = useGridStore((state) => state.dimensionY);
 
     function handleBarsPerMinuteChange(value: number) {
         setBarsPerMinute(value);
         Tone.getTransport().bpm.value = value * notesPerBar;
     }
+
+    const [subscribeKeys] = useKeyboardControls<ShortcutEnum>();
+
+    useEffect(() => {
+        const unsubscribeSpace = subscribeKeys(
+            (state) => state.space,
+            (pressed) => {
+                const animationState = useGridStore.getState().animationState;
+                const userHasClicked = useGridStore.getState().userHasClicked;
+                if (pressed && userHasClicked) {
+                    setAnimationState(
+                        animationState === "playing" ? "paused" : "playing"
+                    );
+                }
+            }
+        );
+        return () => {
+            unsubscribeSpace();
+        };
+    });
 
     function handleCellColorChange(
         color: string,
@@ -32,8 +58,6 @@ export default function Controls() {
     }
 
     useControls(() => ({
-        Play: button(() => setAnimationState("playing")),
-        Pause: button(() => setAnimationState("paused")),
         "Clear Grid": button(() => {
             setAnimationState("paused");
             const cells = useGridStore.getState().cells;
@@ -103,26 +127,12 @@ export default function Controls() {
                 };
             });
         }),
-        "Bars Per Minute": {
-            value: useGridStore.getState().barsPerMinute,
-            min: 30,
-            max: 360,
-            step: 1,
-            onEditEnd: handleBarsPerMinuteChange,
-        },
         "Notes Per Bar": {
             value: useGridStore.getState().notesPerBar,
             min: 1,
             max: 16,
             step: 1,
             onChange: (value) => setNotesPerBar(value),
-        },
-        TPM: {
-            value: useGridStore.getState().tpm,
-            min: 0,
-            max: 360,
-            step: 1,
-            onEditEnd: (value) => setTpm(value),
         },
         attack: {
             value: useGridStore.getState().attack,
@@ -173,5 +183,66 @@ export default function Controls() {
             onChange: (color) => handleCellColorChange(color, "deadDisabled"),
         },
     }));
-    return null;
+    return (
+        <>
+            <group position={[0, -dimensionY * instrumentScale * 2, 0]}>
+                <group
+                    onClick={() => setAnimationState("playing")}
+                    position={[-2, 0, 0]}
+                    scale={1.5}
+                >
+                    <mesh
+                        position={[0, 0, -0.01]}
+                        visible={false}
+                    >
+                        <planeGeometry args={[1, 1]} />
+                    </mesh>
+                    <mesh rotation={[-Math.PI / 2, Math.PI / 2, 0]}>
+                        <cylinderGeometry
+                            args={[0, 1 / Math.sqrt(3), 1, 3, 1]}
+                        />
+                        <meshBasicMaterial color={"#413324"} />
+                    </mesh>
+                </group>
+                <group
+                    onClick={() => setAnimationState("paused")}
+                    position={[0, 0, 0]}
+                    scale={1.5}
+                >
+                    <mesh
+                        position={[0, 0, -0.01]}
+                        visible={false}
+                    >
+                        <planeGeometry args={[1, 1]} />
+                    </mesh>
+                    <mesh position={[-0.25, 0, 0]}>
+                        <planeGeometry args={[0.25, 1]} />
+                        <meshBasicMaterial color={"#413324"} />
+                    </mesh>
+                    <mesh position={[0.25, 0, 0]}>
+                        <planeGeometry args={[0.25, 1]} />
+                        <meshBasicMaterial color={"#413324"} />
+                    </mesh>
+                </group>
+                <Knob
+                    position={[-6, -3, 0]}
+                    minValue={10}
+                    maxValue={100}
+                    onChange={(value) => handleBarsPerMinuteChange(value)}
+                    label="Bars / Minute"
+                    startValue={30}
+                />
+                <Knob
+                    position={[-2, -3, 0]}
+                    minValue={10}
+                    maxValue={100}
+                    onDragEnd={(value) => {
+                        useGridStore.setState({ tpm: value });
+                    }}
+                    label="Ticks / Minute"
+                    startValue={30}
+                />
+            </group>
+        </>
+    );
 }

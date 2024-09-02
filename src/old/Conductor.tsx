@@ -1,9 +1,9 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
-import { drumTypes } from "./constants";
-import { DrumType } from "./sharedTypes";
-import { useGridStore } from "./useGridStore";
+import { drumTypes } from "../constants";
+import { DrumType } from "../sharedTypes";
+import { useGridStore } from "../useGridStore";
 
 export default function Conductor() {
     const barsPerMinute = useGridStore((state) => state.barsPerMinute);
@@ -12,8 +12,8 @@ export default function Conductor() {
     const dimensionX = useGridStore((state) => state.dimensionX);
     const dimensionY = useGridStore((state) => state.dimensionY);
     const sequenceColumnRef = useRef(0);
-    const changeActiveConfigEveryNNotes = useGridStore(
-        (state) => state.changeActiveConfigEveryNNotes
+    const autoChangeActiveConfigEveryNNotes = useGridStore(
+        (state) => state.autoChangeActiveConfigEveryNNotes
     );
     const changeActiveConfigCountRef = useRef(0);
     const handleAutoChangeActiveConfig = useGridStore(
@@ -35,8 +35,12 @@ export default function Conductor() {
     const sustain = useGridStore((state) => state.sustain);
     const release = useGridStore((state) => state.release);
 
-    const activeConfig = useGridStore((state) => state.activeConfig);
-    const activeConfigRef = useRef(useGridStore.getState().activeConfig);
+    const currentNoteConfigCellIndex = useGridStore(
+        (state) => state.currentNoteConfigCellIndex
+    );
+    const currentNoteConfigCellIndexRef = useRef(
+        useGridStore.getState().currentNoteConfigCellIndex
+    );
 
     const drumNoteMap: Record<DrumType, "A1" | "A2" | "A3"> = {
         Kick: "A1",
@@ -61,10 +65,12 @@ export default function Conductor() {
     }, [barsPerMinute, notesPerBar]);
 
     useEffect(() => {
-        if (activeConfig !== activeConfigRef.current) {
-            activeConfigRef.current = activeConfig;
+        if (
+            currentNoteConfigCellIndex !== currentNoteConfigCellIndexRef.current
+        ) {
+            currentNoteConfigCellIndexRef.current = currentNoteConfigCellIndex;
         }
-    }, [activeConfig]);
+    }, [currentNoteConfigCellIndex]);
 
     useEffect(() => {
         if (userHasClicked) {
@@ -116,12 +122,13 @@ export default function Conductor() {
         if (elapsedBpm.current >= 60 / barsPerMinute / notesPerBar) {
             elapsedBpm.current = 0;
 
-            if (changeActiveConfigEveryNNotes > 0) {
+            if (autoChangeActiveConfigEveryNNotes > 0) {
                 if (
                     changeActiveConfigCountRef.current >=
-                    changeActiveConfigEveryNNotes
+                    autoChangeActiveConfigEveryNNotes
                 ) {
-                    activeConfigRef.current = handleAutoChangeActiveConfig();
+                    currentNoteConfigCellIndexRef.current =
+                        handleAutoChangeActiveConfig();
                     changeActiveConfigCountRef.current = 0;
                 }
                 changeActiveConfigCountRef.current++;
@@ -146,7 +153,9 @@ export default function Conductor() {
             const drumCells = useGridStore.getState().drumCells;
             const played: Array<string | number> = [];
             const currentNoteConfigs =
-                useGridStore.getState().noteConfigs[activeConfigRef.current];
+                useGridStore.getState().noteConfigCells[
+                    currentNoteConfigCellIndexRef.current
+                ].noteConfigs;
 
             for (let i = 0; i < dimensionY; i++) {
                 const cell = cells[`${sequenceColumnRef.current},${i}`];

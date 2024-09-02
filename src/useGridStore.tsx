@@ -4,14 +4,14 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
 import { initialDimensions } from "./constants.tsx";
-import { defaultNoteConfigs } from "./noteConfigs";
+import { defaultNoteConfigCells } from "./old/noteConfigs.tsx";
 import {
     CellColors,
     CellRecord,
     CellType,
     DrumCellRecord,
     DrumType,
-    NoteConfig,
+    NoteConfigCell,
 } from "./sharedTypes";
 
 interface GridStoreTypes {
@@ -40,13 +40,18 @@ interface GridStoreTypes {
     decay: number;
     sustain: number;
     release: number;
-    noteConfigs: Array<Array<NoteConfig>>;
-    activeConfig: number;
-    changeActiveConfigEveryNNotes: number;
-    changeActiveConfigSequence: number[] | "random";
-    changeActiveConfigSequenceCurrentIndex: number;
-    setChangeActiveConfigSequence: (sequence: number[] | "random") => void;
+    noteConfigCells: Array<NoteConfigCell>;
+    currentNoteConfigCellIndex: number;
+    autoChangeActiveConfigType:
+        | "sequential"
+        | "true random"
+        | "avoid prev random"
+        | null;
+    autoChangeActiveConfigEveryNNotes: number;
     handleAutoChangeActiveConfig: () => number;
+    adjustingKnob: boolean;
+    editingNoteIndices: [number, number] | null;
+    editingNoteConfigIndex: number | null;
 }
 
 export const useGridStore = create<GridStoreTypes>()(
@@ -85,7 +90,7 @@ export const useGridStore = create<GridStoreTypes>()(
                 dead: new THREE.Color("#413324"),
                 deadDisabled: new THREE.Color("#000000"),
             },
-            barsPerMinute: 30,
+            barsPerMinute: 50,
             setBarsPerMinute: (barsPerMinute: number) => {
                 set((state) => {
                     state.barsPerMinute = barsPerMinute;
@@ -114,59 +119,68 @@ export const useGridStore = create<GridStoreTypes>()(
             audioInitialized: false,
             synth: null,
             drums: null,
-            // attack: 0.41,
             attack: 0.005,
-            // decay: 0.01,
             decay: 0.1,
             sustain: 0.3,
-            // release: 0.75,
             release: 1,
-            noteConfigs: defaultNoteConfigs,
-            activeConfig: 0,
-            changeActiveConfigEveryNNotes: 4,
-            changeActiveConfigSequence: [0, 1, 2, 3],
-            changeActiveConfigSequenceCurrentIndex: 0,
-            setChangeActiveConfigSequence: (sequence: number[] | "random") => {
-                if (sequence === "random") {
-                    set((s) => {
-                        s.changeActiveConfigSequence = sequence;
-                        s.changeActiveConfigSequenceCurrentIndex = 0;
-                    });
-                } else {
-                    set((s) => {
-                        s.changeActiveConfigSequence = sequence;
-                    });
-                }
-            },
+            noteConfigCells: defaultNoteConfigCells,
+            currentNoteConfigCellIndex: 0,
+            autoChangeActiveConfigType: "sequential",
+            autoChangeActiveConfigEveryNNotes: 4,
             handleAutoChangeActiveConfig: () => {
-                const changeActiveConfigSequence =
-                    get().changeActiveConfigSequence;
-                let changeActiveConfigSequenceCurrentIndex =
-                    get().changeActiveConfigSequenceCurrentIndex;
-                let activeConfig: number;
-                if (changeActiveConfigSequence === "random") {
-                    activeConfig = Math.floor(
-                        Math.random() * get().noteConfigs.length
-                    );
-                    set((s) => {
-                        s.activeConfig = activeConfig;
-                    });
-                } else {
-                    changeActiveConfigSequenceCurrentIndex =
-                        (changeActiveConfigSequenceCurrentIndex + 1) %
-                        changeActiveConfigSequence.length;
-                    activeConfig =
-                        changeActiveConfigSequence[
-                            changeActiveConfigSequenceCurrentIndex as number
+                const {
+                    autoChangeActiveConfigType,
+                    currentNoteConfigCellIndex,
+                    noteConfigCells,
+                } = get();
+                let nextIndex = null;
+                if (autoChangeActiveConfigType === "sequential") {
+                    let checkIndex = currentNoteConfigCellIndex;
+                    for (let i = 0; i < noteConfigCells.length; i++) {
+                        checkIndex = (checkIndex + 1) % noteConfigCells.length;
+                        if (noteConfigCells[checkIndex].enabled) {
+                            nextIndex = checkIndex;
+                            break;
+                        }
+                    }
+                    nextIndex = nextIndex ?? currentNoteConfigCellIndex;
+                } else if (autoChangeActiveConfigType === "true random") {
+                    const enabledIndices = noteConfigCells
+                        .map((cell, index) => (cell.enabled ? index : null))
+                        .filter((index) => index !== null) as number[];
+                    nextIndex =
+                        enabledIndices[
+                            Math.floor(Math.random() * enabledIndices.length)
                         ];
-                    set((s) => {
-                        s.changeActiveConfigSequenceCurrentIndex =
-                            changeActiveConfigSequenceCurrentIndex;
-                        s.activeConfig = activeConfig as number;
-                    });
+                } else if (autoChangeActiveConfigType === "avoid prev random") {
+                    const enabledIndices = noteConfigCells
+                        .map((cell, index) => (cell.enabled ? index : null))
+                        .filter((index) => index !== null) as number[];
+                    const prevIndex = currentNoteConfigCellIndex;
+                    const nextIndices = enabledIndices.filter(
+                        (index) => index !== prevIndex
+                    );
+                    if (nextIndices.length === 0) {
+                        nextIndex = prevIndex;
+                    } else {
+                        nextIndex =
+                            nextIndices[
+                                Math.floor(Math.random() * nextIndices.length)
+                            ];
+                    }
+                } else if (autoChangeActiveConfigType === null) {
+                    nextIndex = currentNoteConfigCellIndex;
+                } else {
+                    throw new Error("Invalid autoChangeActiveConfigType");
                 }
-                return activeConfig;
+                set((state) => {
+                    state.currentNoteConfigCellIndex = nextIndex!;
+                });
+                return nextIndex!;
             },
+            adjustingKnob: false,
+            editingNoteIndices: null,
+            editingNoteConfigIndex: null,
         }))
     )
 );
