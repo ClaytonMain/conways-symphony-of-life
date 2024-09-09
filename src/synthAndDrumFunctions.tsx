@@ -5,7 +5,8 @@ import { DrumCell, DrumType, VoiceMode } from "./sharedTypes";
 export function playSynthNotes(
     synth: Tone.PolySynth | Tone.MonoSynth,
     frequencies: Tone.FrequencyClass<number>[],
-    voiceMode: VoiceMode
+    voiceMode: VoiceMode,
+    noteDuration: number
 ) {
     if (voiceMode === "poly") {
         if (!(synth instanceof Tone.PolySynth)) {
@@ -21,7 +22,10 @@ export function playSynthNotes(
                 ) {
                     continue;
                 }
-                synth.triggerAttackRelease(frequency.toFrequency(), "4n");
+                synth.triggerAttackRelease(
+                    frequency.toFrequency(),
+                    noteDuration
+                );
                 playedNotes.push(frequency);
             }
         }

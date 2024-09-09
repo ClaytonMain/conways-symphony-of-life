@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { drumTypes } from "../constants";
 import { CellColors, CellType, DrumCellRecord, DrumType } from "../sharedTypes";
-import { useGridStore } from "../useGridStore";
 import Controls from "./Controls";
+import { useGridStore } from "./useGridStore";
 
 type PointerEventTypes = "down" | "over" | "out";
 

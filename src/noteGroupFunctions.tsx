@@ -1,7 +1,5 @@
 import { Frequency, FrequencyClass } from "tone";
-import { chordQualitySteps } from "./constants";
 import {
-    ChordQuality,
     NoteAccidental,
     NoteGroupCell,
     NoteGroupNote,
@@ -12,12 +10,11 @@ import {
 export function generateNoteGroupNotes(
     sequencerHeight: number,
     root: `${NoteName}${NoteAccidental}`,
-    quality: ChordQuality,
+    semitones: number[],
     octaveStart: NoteOctave,
     octaveIncrement: number
 ) {
     const groupNotes: NoteGroupNote[] = [];
-    const chordSteps = chordQualitySteps[quality];
     const initialFrequency: FrequencyClass<number> = Frequency(
         `${root}${octaveStart}`
     );
@@ -27,7 +24,7 @@ export function generateNoteGroupNotes(
     let thisFrequency: FrequencyClass<number> = initialFrequency;
     for (let i = 0; i < sequencerHeight; i++) {
         thisFrequency = initialFrequency.transpose(
-            octaveDelta * 12 + chordSteps[currentChordStepIndex]
+            octaveDelta * 12 + semitones[currentChordStepIndex]
         );
         groupNotes.push({
             note: thisFrequency.toNote(),
@@ -36,7 +33,7 @@ export function generateNoteGroupNotes(
             globalRowEnabled: true,
         });
         currentChordStepIndex++;
-        if (currentChordStepIndex >= chordSteps.length) {
+        if (currentChordStepIndex >= semitones.length) {
             currentChordStepIndex = 0;
             currentOctave = Math.min(
                 Math.max(currentOctave + octaveIncrement, -4),
@@ -50,7 +47,7 @@ export function generateNoteGroupNotes(
 
 interface NoteGroupGenerationParameters {
     root: `${NoteName}${NoteAccidental}`;
-    quality: ChordQuality;
+    semitones: number[];
     octaveStart: NoteOctave;
     octaveIncrement: number;
 }
@@ -58,8 +55,26 @@ interface NoteGroupGenerationParameters {
 const initialNoteGroupGenerationParameters: NoteGroupGenerationParameters[] = [
     {
         root: "A#",
-        quality: "7sus2",
+        semitones: [0, 3, 7, 10, 15, 20],
         octaveStart: 2,
+        octaveIncrement: 1,
+    },
+    {
+        root: "B",
+        semitones: [0, 4, 7, 14, 16, 19],
+        octaveStart: 2,
+        octaveIncrement: 1,
+    },
+    {
+        root: "C#",
+        semitones: [0, 4, 7, 12, 16, 17],
+        octaveStart: 3,
+        octaveIncrement: 1,
+    },
+    {
+        root: "D#",
+        semitones: [0, 3, 7, 12, 14, 17],
+        octaveStart: 3,
         octaveIncrement: 1,
     },
 ];
@@ -78,17 +93,20 @@ export function initializeNoteGroups(
             ];
         noteGroups.push({
             enabled: true,
-            active: false,
+            active: i === 0,
             notes: generateNoteGroupNotes(
                 sequencerHeight,
                 noteGroupGenerationParameters.root,
-                noteGroupGenerationParameters.quality,
+                noteGroupGenerationParameters.semitones,
                 noteGroupGenerationParameters.octaveStart,
                 noteGroupGenerationParameters.octaveIncrement
             ),
+            root: noteGroupGenerationParameters.root,
+            semitones: noteGroupGenerationParameters.semitones,
+            octaveStart: noteGroupGenerationParameters.octaveStart,
+            octaveIncrement: noteGroupGenerationParameters.octaveIncrement,
             enabledRows: Array.from({ length: sequencerHeight }, () => true),
         });
     }
-    console.log(noteGroups);
     return noteGroups;
 }

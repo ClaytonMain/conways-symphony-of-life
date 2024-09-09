@@ -1,0 +1,29 @@
+.htmlDefault {
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    user-select: none;
+}
+
+.labelDefault {
+    display: flex;
+    justify-content: center;
+    font-family: monospace;
+    font-size: 0.4rem;
+    width: 2rem;
+    text-align: center;
+    color: white;
+}
+
+.optionDefault {
+    display: flex;
+    justify-content: center;
+    font-family: monospace;
+    width: 2rem;
+    font-size: 1.1rem;
+    text-align: center;
+    align-items: center;
+    font-weight: bold;
+    color: white;
+}

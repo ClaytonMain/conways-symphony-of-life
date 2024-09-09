@@ -2,8 +2,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { noteNames, octaves } from "../constants";
 import { Note, NoteConfig } from "../sharedTypes";
-import { useGridStore } from "../useGridStore";
 import "./NoteConfigEditModal.css";
+import { useGridStore } from "./useGridStore";
 
 export default function NoteConfigEditModal() {
     const [modalVisible, setModalVisible] = useState(false);

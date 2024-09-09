@@ -1,6 +1,6 @@
 import { useEffect } from "react";
+import { useGridStore } from "./old/useGridStore";
 import { useGlobalStore } from "./stores/useGlobalStore";
-import { useGridStore } from "./useGridStore";
 
 export default function DetectClick() {
     function handleClick() {

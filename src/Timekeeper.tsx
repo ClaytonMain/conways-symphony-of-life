@@ -2,14 +2,13 @@ import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import { aliveStates } from "./constants";
 import { getCellsToUpdateOnNextTick } from "./gameOfLifeFunctions";
-import { playDrums, playSynthNotes } from "./instrumentFunctions";
 import { SequencerCell } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
+import { playDrums, playSynthNotes } from "./synthAndDrumFunctions";
 
 export default function Timekeeper() {
-    const { sequencerLength, npm, npt, npg, playState } = useGlobalStore(
-        (state) => state
-    );
+    const { sequencerLength, npm, npt, npg, playState, noteDuration } =
+        useGlobalStore((state) => state);
     const indexDurationRef = useRef(0);
     const sequencerIndexRef = useRef(
         useGlobalStore.getState().currentSequencerIndex
@@ -18,8 +17,12 @@ export default function Timekeeper() {
     const tickPlayedNotesCountRef = useRef<number | null>(null);
     const groupPlayedNotesCountRef = useRef<number | null>(null);
 
-    function moduloIncrement(value: number | null, modulo: number) {
-        if (value === null) return 0;
+    function moduloIncrement(
+        value: number | null,
+        modulo: number,
+        returnNullAs: 1 | 0 = 1
+    ) {
+        if (value === null) return returnNullAs;
         return (value + 1) % modulo;
     }
 
@@ -71,6 +74,34 @@ export default function Timekeeper() {
         return nextNoteGroupIndex;
     }
 
+    let sequencerCells = useGlobalStore.getState().sequencerCells;
+    let cellsToUpdate: Record<number, SequencerCell> = {};
+    let currentNoteGroupIndex = useGlobalStore.getState().currentNoteGroupIndex;
+    let nextNoteGroupIndex = currentNoteGroupIndex;
+    let synth = useGlobalStore.getState().synth;
+    let currentNoteGroup =
+        useGlobalStore.getState().noteGroupCells[nextNoteGroupIndex];
+    let globallyEnabledSequencerRows =
+        useGlobalStore.getState().globallyEnabledSequencerRows;
+    let noteIndicesToPlay = Object.values(sequencerCells)
+        .filter(
+            (cell) =>
+                cell.x === sequencerIndexRef.current &&
+                aliveStates.includes(cell.state) &&
+                currentNoteGroup.enabledRows[cell.y] &&
+                globallyEnabledSequencerRows[cell.y]
+        )
+        .map((cell) => cell.y);
+    let frequenciesToPlay = noteIndicesToPlay.map(
+        (noteIndex) => currentNoteGroup.notes[noteIndex].frequency
+    );
+    let voiceMode = useGlobalStore.getState().voiceMode;
+    let drumSampler = useGlobalStore.getState().drumSampler;
+    let drumCells = useGlobalStore.getState().drumCells;
+    let drumTypesToPlay = drumCells[0]
+        .filter((cell) => cell.alive)
+        .map((cell) => cell.drumType);
+
     useFrame((_, delta) => {
         if (playState === "stopped") {
             if (indexDurationRef.current > 0) {
@@ -99,7 +130,8 @@ export default function Timekeeper() {
             // Otherwise, check if enough time has elapsed to move to the next index.
             indexDurationRef.current += delta;
             if (indexDurationRef.current >= 60 / npm) {
-                indexDurationRef.current -= 60 / npm;
+                indexDurationRef.current =
+                    indexDurationRef.current % (60 / npm);
                 shouldIncrementIndexRef.current = true;
             }
         }
@@ -109,11 +141,12 @@ export default function Timekeeper() {
 
         sequencerIndexRef.current = moduloIncrement(
             sequencerIndexRef.current,
-            sequencerLength
+            sequencerLength,
+            0
         );
 
-        let sequencerCells = useGlobalStore.getState().sequencerCells;
-        let cellsToUpdate: Record<number, SequencerCell> = {};
+        sequencerCells = useGlobalStore.getState().sequencerCells;
+        cellsToUpdate = {};
         if (npt !== null) {
             if (tickPlayedNotesCountRef.current === 0) {
                 cellsToUpdate = getCellsToUpdateOnNextTick(sequencerCells);
@@ -125,9 +158,8 @@ export default function Timekeeper() {
         }
         sequencerCells = { ...sequencerCells, ...cellsToUpdate };
 
-        const currentNoteGroupIndex =
-            useGlobalStore.getState().currentNoteGroupIndex;
-        let nextNoteGroupIndex = currentNoteGroupIndex;
+        currentNoteGroupIndex = useGlobalStore.getState().currentNoteGroupIndex;
+        nextNoteGroupIndex = currentNoteGroupIndex;
         if (npg !== null) {
             if (groupPlayedNotesCountRef.current === 0) {
                 nextNoteGroupIndex = getNextNoteGroupIndex(
@@ -140,12 +172,12 @@ export default function Timekeeper() {
             );
         }
 
-        const synth = useGlobalStore.getState().synth;
-        const currentNoteGroup =
+        synth = useGlobalStore.getState().synth;
+        currentNoteGroup =
             useGlobalStore.getState().noteGroupCells[nextNoteGroupIndex];
-        const globallyEnabledSequencerRows =
+        globallyEnabledSequencerRows =
             useGlobalStore.getState().globallyEnabledSequencerRows;
-        const noteIndicesToPlay = Object.values(sequencerCells)
+        noteIndicesToPlay = Object.values(sequencerCells)
             .filter(
                 (cell) =>
                     cell.x === sequencerIndexRef.current &&
@@ -154,17 +186,17 @@ export default function Timekeeper() {
                     globallyEnabledSequencerRows[cell.y]
             )
             .map((cell) => cell.y);
-        const frequenciesToPlay = noteIndicesToPlay.map(
+        frequenciesToPlay = noteIndicesToPlay.map(
             (noteIndex) => currentNoteGroup.notes[noteIndex].frequency
         );
-        const voiceMode = useGlobalStore.getState().voiceMode;
+        voiceMode = useGlobalStore.getState().voiceMode;
         if (synth && frequenciesToPlay.length > 0) {
-            playSynthNotes(synth, frequenciesToPlay, voiceMode);
+            playSynthNotes(synth, frequenciesToPlay, voiceMode, noteDuration);
         }
 
-        const drumSampler = useGlobalStore.getState().drumSampler;
-        const drumCells = useGlobalStore.getState().drumCells;
-        const drumTypesToPlay = drumCells[sequencerIndexRef.current]
+        drumSampler = useGlobalStore.getState().drumSampler;
+        drumCells = useGlobalStore.getState().drumCells;
+        drumTypesToPlay = drumCells[sequencerIndexRef.current]
             .filter((cell) => cell.alive)
             .map((cell) => cell.drumType);
         if (drumSampler && drumTypesToPlay.length > 0) {
@@ -174,8 +206,14 @@ export default function Timekeeper() {
         useGlobalStore.setState((state) => {
             state.currentSequencerIndex = sequencerIndexRef.current;
             state.sequencerCells = sequencerCells;
-            state.currentNoteGroupIndex = nextNoteGroupIndex;
         });
+        if (nextNoteGroupIndex !== currentNoteGroupIndex) {
+            useGlobalStore.setState((state) => {
+                state.currentNoteGroupIndex = nextNoteGroupIndex;
+                state.noteGroupCells[nextNoteGroupIndex].active = true;
+                state.noteGroupCells[currentNoteGroupIndex].active = false;
+            });
+        }
     });
     return null;
 }

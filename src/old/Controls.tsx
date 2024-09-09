@@ -5,7 +5,7 @@ import * as THREE from "three";
 import * as Tone from "tone";
 import Knob from "../Knob";
 import { CellRecord, ShortcutEnum } from "../sharedTypes";
-import { useGridStore } from "../useGridStore";
+import { useGridStore } from "./useGridStore";
 
 interface ControlsProps {
     instrumentScale?: number;

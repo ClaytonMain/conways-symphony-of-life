@@ -1,8 +1,8 @@
 import {
     CellStates,
-    ChordQuality,
     DrumType,
     GameWrapMode,
+    NoteAccidental,
     NoteName,
 } from "./sharedTypes";
 
@@ -17,54 +17,22 @@ export const drumNoteMap: Record<DrumType, "A1" | "A2" | "A3"> = {
     HiHat: "A3",
 };
 export const sequencerScale = 0.3;
-export const chordQualitySteps: Record<ChordQuality, number[]> = {
-    "": [0, 4, 7],
-    m: [0, 3, 7],
-    dim: [0, 3, 6],
-    aug: [0, 4, 8],
-    sus2: [0, 2, 7],
-    sus4: [0, 5, 7],
-    maj7: [0, 4, 7, 11],
-    m7: [0, 3, 7, 10],
-    "7": [0, 4, 7, 10],
-    "7sus2": [0, 2, 7, 10],
-    "7sus4": [0, 5, 7, 10],
-    // halfDiminished7: [0, 3, 6, 10],
-    // diminished7: [0, 3, 6, 9],
-    // augmented7: [0, 4, 8, 10],
-    // major9: [0, 4, 7, 11, 14],
-    // minor9: [0, 3, 7, 10, 14],
-    // dominant9: [0, 4, 7, 10, 14],
-    // halfDiminished9: [0, 3, 6, 10, 14],
-    // diminished9: [0, 3, 6, 9, 14],
-    // augmented9: [0, 4, 8, 10, 14],
-    // major11: [0, 4, 7, 11, 14, 17],
-    // minor11: [0, 3, 7, 10, 14, 17],
-    // dominant11: [0, 4, 7, 10, 14, 17],
-    // halfDiminished11: [0, 3, 6, 10, 14, 17],
-    // diminished11: [0, 3, 6, 9, 14, 17],
-    // augmented11: [0, 4, 8, 10, 14, 17],
-    // major13: [0, 4, 7, 11, 14, 17, 21],
-    // minor13: [0, 3, 7, 10, 14, 17, 21],
-    // dominant13: [0, 4, 7, 10, 14, 17, 21],
-};
-// export const scaleIndexAccidentals = [
-//     false,
-//     true,
-//     false,
-//     true,
-//     false,
-//     false,
-//     true,
-//     false,
-//     true,
-//     false,
-//     true,
-//     false,
-// ];
-export const noteNames: Array<NoteName> = ["C", "D", "E", "F", "G", "A", "B"];
 export const sequencerCellScale = 0.9;
 export const aliveStates: CellStates[] = ["alive", "invincible"];
+export const chordRoots: Array<`${NoteName}${NoteAccidental}`> = [
+    "C",
+    "C#",
+    "D",
+    "D#",
+    "E",
+    "F",
+    "F#",
+    "G",
+    "G#",
+    "A",
+    "A#",
+    "B",
+];
 
 // Old code below:
 export const initialDimensions: [number, number] = [16, 16];

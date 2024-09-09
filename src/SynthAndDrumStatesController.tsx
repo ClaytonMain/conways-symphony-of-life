@@ -3,13 +3,16 @@ import * as Tone from "tone";
 import { drumNoteMap } from "./constants";
 import { useGlobalStore } from "./stores/useGlobalStore";
 
-export default function InstrumentStatesController() {
+export default function SynthAndDrumStatesController() {
     const userHasClicked = useGlobalStore((state) => state.userHasClicked);
     const [synth, setSynth] = useState<Tone.PolySynth | Tone.MonoSynth | null>(
         useGlobalStore.getState().synth
     );
     const [, setDrumSampler] = useState<Tone.Sampler | null>(
         useGlobalStore.getState().drumSampler
+    );
+    const [, setEqualizer] = useState<Tone.EQ3 | null>(
+        useGlobalStore.getState().equalizer
     );
     const npm = useGlobalStore((state) => state.npm);
     const voiceMode = useGlobalStore((state) => state.voiceMode);
@@ -72,6 +75,11 @@ export default function InstrumentStatesController() {
 
     useEffect(() => {
         if (!userHasClicked) return;
+        const _equalizer = new Tone.EQ3({
+            low: 0,
+            mid: 0,
+            high: 0,
+        }).toDestination();
         let _synth;
         if (voiceMode === "poly") {
             _synth = new Tone.PolySynth(Tone.Synth, {
@@ -84,6 +92,7 @@ export default function InstrumentStatesController() {
                     release,
                 },
             }).toDestination();
+            // }).connect(_equalizer);
         } else {
             _synth = new Tone.MonoSynth({
                 oscillator: { type: waveform },
@@ -95,6 +104,7 @@ export default function InstrumentStatesController() {
                     release,
                 },
             }).toDestination();
+            // }).connect(_equalizer);
         }
         const _drumSampler = new Tone.Sampler({
             urls: {
@@ -104,12 +114,14 @@ export default function InstrumentStatesController() {
             },
             volume: drumsVolume,
         }).toDestination();
-        if (!_synth || !_drumSampler) return;
+        if (!_synth || !_drumSampler || !_equalizer) return;
         setSynth(_synth);
         setDrumSampler(_drumSampler);
+        setEqualizer(_equalizer);
         useGlobalStore.setState((state) => {
             state.synth = _synth;
             state.drumSampler = _drumSampler;
+            state.equalizer = _equalizer;
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userHasClicked]);

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import * as Tone from "tone";
 import { drumTypes } from "../constants";
 import { DrumType } from "../sharedTypes";
-import { useGridStore } from "../useGridStore";
+import { useGridStore } from "./useGridStore";
 
 export default function Conductor() {
     const barsPerMinute = useGridStore((state) => state.barsPerMinute);

@@ -1,8 +1,10 @@
 import {
     Bounds,
+    Environment,
     OrbitControls,
     PerformanceMonitor,
     SizeProps,
+    Stats,
 } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { enableMapSet } from "immer";
@@ -10,10 +12,12 @@ import { Suspense, useState } from "react";
 import * as THREE from "three";
 import "./App.css";
 import DetectClick from "./DetectClick";
-import InstrumentStatesController from "./InstrumentStatesController";
+import DrumSequencer from "./DrumSequencer";
+import NoteGroups from "./NoteGroups";
 import PlayStateController from "./PlayStateController";
 import Sequencer from "./Sequencer";
 import ShortcutWrapper from "./ShortcutWrapper";
+import SynthAndDrumStatesController from "./SynthAndDrumStatesController";
 import Timekeeper from "./Timekeeper";
 
 enableMapSet();
@@ -93,7 +97,7 @@ function App() {
                 />
                 <Suspense fallback={null}>
                     <ShortcutWrapper>
-                        {/* <Environment preset="city" /> */}
+                        <Environment preset="city" />
                         <color
                             attach="background"
                             args={[bgColor]}
@@ -101,21 +105,24 @@ function App() {
                         <ambientLight intensity={0.5} />
                         <Timekeeper />
                         <PlayStateController />
-                        <InstrumentStatesController />
+                        <SynthAndDrumStatesController />
                         <Bounds
                             fit
                             clip
                             maxDuration={0}
                             onFit={handleOnFit}
-                            margin={2}
+                            margin={1.5}
                         >
                             <Sequencer />
+                            <NoteGroups />
+                            <DrumSequencer />
                         </Bounds>
                         {/* <Instrument />
                         <Conductor />
                         <Conway /> */}
                     </ShortcutWrapper>
                 </Suspense>
+                <Stats />
             </Canvas>
         </>
     );
