@@ -14,7 +14,7 @@ interface InstrumentButtonProps {
 
 export default function InstrumentButton({
     position = [0, 0, 0],
-    roundedBoxProps = {},
+    roundedBoxProps = { radius: 0.1 },
     scale = 1,
     label = "",
     labelDistanceFactor = 10,
@@ -31,7 +31,7 @@ export default function InstrumentButton({
             onPointerOut={() => setHovered(false)}
         >
             <RoundedBox {...roundedBoxProps}>
-                <meshBasicMaterial color="grey" />
+                <meshStandardMaterial color="#545454" />
             </RoundedBox>
             <Html
                 center
@@ -52,6 +52,7 @@ export default function InstrumentButton({
                         fontWeight: "bold",
                         fontFamily: "monospace",
                         userSelect: "none",
+                        color: "white",
                     }}
                 >
                     {label}

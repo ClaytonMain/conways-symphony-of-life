@@ -1,0 +1,26 @@
+.knob-label-options-default {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: black;
+    font-weight: bold;
+    pointer-events: none;
+    user-select: none;
+}
+
+.knob-label-default {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: black;
+    font-weight: bold;
+    pointer-events: none;
+    user-select: none;
+}
+
+.knob-value-default {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: white;
+    font-weight: bold;
+    pointer-events: none;
+    user-select: none;
+}

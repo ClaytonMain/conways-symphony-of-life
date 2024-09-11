@@ -117,9 +117,6 @@ function App() {
                             <NoteGroups />
                             <DrumSequencer />
                         </Bounds>
-                        {/* <Instrument />
-                        <Conductor />
-                        <Conway /> */}
                     </ShortcutWrapper>
                 </Suspense>
                 <Stats />

@@ -4,6 +4,12 @@ import * as THREE from "three";
 import "./InstrumentArrowSelect.css";
 import { RoundedBoxProps } from "./sharedTypes";
 
+interface StyleProps {
+    color?: string;
+    fontSize?: string;
+    width?: string;
+}
+
 interface InstrumentArrowSelectProps {
     position?: [number, number, number] | THREE.Vector3;
     orientation?: "horizontal" | "vertical";
@@ -15,8 +21,9 @@ interface InstrumentArrowSelectProps {
     startingOptionIndex?: number;
     onChange?: ((value: string | number) => void) | undefined;
     buttonColor?: string;
-    buttonTextColor?: string;
     buttonArrowColor?: string;
+    labelStyle?: StyleProps;
+    optionStyle?: StyleProps;
 }
 
 export default function InstrumentArrowSelect({
@@ -30,8 +37,15 @@ export default function InstrumentArrowSelect({
     startingOptionIndex = 0,
     onChange = undefined,
     buttonColor = "#545454",
-    buttonTextColor = "white",
     buttonArrowColor = "white",
+    labelStyle = {
+        color: "white",
+        fontSize: "0.4rem",
+    },
+    optionStyle = {
+        color: "white",
+        fontSize: "1.1rem",
+    },
 }: InstrumentArrowSelectProps) {
     const [hovered, setHovered] = useState(false);
     const [selectedOptionIndex, setSelectedOptionIndex] =
@@ -44,14 +58,14 @@ export default function InstrumentArrowSelect({
             args:
                 orientation === "horizontal"
                     ? [
-                          0.5,
+                          1.0,
                           roundedBoxProps.args?.[1] ?? 1.0,
                           roundedBoxProps.args?.[2] ?? 1.0,
                       ]
                     : [
-                          0.5,
+                          1.0,
+                          roundedBoxProps.args?.[0] ?? 1.0,
                           roundedBoxProps.args?.[2] ?? 1.0,
-                          roundedBoxProps.args?.[1] ?? 1.0,
                       ],
         };
     }
@@ -68,14 +82,14 @@ export default function InstrumentArrowSelect({
 
     const arrowButtonPosition: [number, number, number] = [
         orientation === "horizontal"
-            ? -((roundedBoxProps.args?.[0] ?? 1.0) + 0.5) / 2 - 0.05
-            : -((roundedBoxProps.args?.[1] ?? 1.0) + 0.5) / 2 - 0.05,
+            ? -(roundedBoxProps.args?.[0] ?? 1.0) / 2 - 0.6
+            : -((roundedBoxProps.args?.[1] ?? 1.0) * 1.5) / 2 - 0.05,
         0,
         0,
     ];
 
     const arrowGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.5, 3);
-    const arrowMaterial = new THREE.MeshBasicMaterial({
+    const arrowMaterial = new THREE.MeshStandardMaterial({
         color: buttonArrowColor,
     });
 
@@ -87,10 +101,10 @@ export default function InstrumentArrowSelect({
         <group
             position={position}
             scale={scale}
-            onPointerOver={() => setHovered(true)}
-            onPointerOut={() => setHovered(false)}
         >
             <group
+                onPointerOver={() => setHovered(true)}
+                onPointerOut={() => setHovered(false)}
                 rotation={
                     orientation === "vertical" ? [0, 0, Math.PI / 2] : [0, 0, 0]
                 }
@@ -100,14 +114,18 @@ export default function InstrumentArrowSelect({
                     onClick={() => handleOnChange(-1)}
                 >
                     <RoundedBox {...arrowRoundedBoxProps}>
-                        <meshBasicMaterial color={buttonColor} />
+                        <meshStandardMaterial color={buttonColor} />
                     </RoundedBox>
                     <mesh
                         geometry={arrowGeometry}
                         material={arrowMaterial}
                         position={[0.05, 0, 1.1]}
                         rotation={[Math.PI / 2, -Math.PI / 2, 0]}
-                        scale={[3, 1, 2]}
+                        scale={[
+                            3 * (roundedBoxProps.args?.[1] ?? 1.0),
+                            1 * (roundedBoxProps.args?.[2] ?? 1.0),
+                            2.5,
+                        ]}
                     />
                 </group>
                 <group
@@ -121,37 +139,46 @@ export default function InstrumentArrowSelect({
                     onClick={() => handleOnChange(1)}
                 >
                     <RoundedBox {...arrowRoundedBoxProps}>
-                        <meshBasicMaterial color={buttonColor} />
+                        <meshStandardMaterial color={buttonColor} />
                     </RoundedBox>
                     <mesh
                         geometry={arrowGeometry}
                         material={arrowMaterial}
                         position={[-0.05, 0, 1.1]}
                         rotation={[Math.PI / 2, Math.PI / 2, 0]}
-                        scale={[3, 1, 2]}
+                        scale={[
+                            3 * (roundedBoxProps.args?.[1] ?? 1.0),
+                            1 * (roundedBoxProps.args?.[2] ?? 1.0),
+                            2.5,
+                        ]}
                     />
                 </group>
             </group>
             <RoundedBox {...roundedBoxProps}>
-                <meshBasicMaterial color={buttonColor} />
+                <meshStandardMaterial color={buttonColor} />
             </RoundedBox>
             <Html
                 center
                 transform
                 distanceFactor={htmlDistanceFactor}
                 className="htmlDefault"
+                scale={
+                    orientation === "horizontal"
+                        ? roundedBoxProps.args?.[1] ?? 1.0
+                        : roundedBoxProps.args?.[0] ?? 1.0
+                }
             >
                 {label && (
                     <div
                         className="labelDefault"
-                        style={{ color: buttonTextColor }}
+                        style={labelStyle}
                     >
                         {label}
                     </div>
                 )}
                 <div
                     className="optionDefault"
-                    style={{ color: buttonTextColor }}
+                    style={optionStyle}
                 >
                     {options[selectedOptionIndex]}
                 </div>

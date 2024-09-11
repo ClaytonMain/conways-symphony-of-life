@@ -32,7 +32,7 @@ interface GlobalStoreTypes {
     sequencerHeight: number;
     npm: number;
     npt: number | null; // Notes per tick.
-    npg: number | null; // Notes per group.
+    npg: number; // Notes per group.
     gameWrapMode: GameWrapMode;
     currentSequencerIndex: number | null;
     sequencerCells: Record<number, SequencerCell>;
@@ -57,6 +57,8 @@ interface GlobalStoreTypes {
     cellEditMode: CellEditMode;
     noteGroupEditMode: NoteGroupEditMode;
     drumEditMode: DrumEditMode;
+    pivotControlsEnabled: boolean;
+    startingCells: Record<number, SequencerCell>;
     _placeholderValue: null;
     _placeholderSet: () => void;
     _placeholderGet: () => null;
@@ -103,6 +105,8 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             cellEditMode: null,
             noteGroupEditMode: null,
             drumEditMode: null,
+            pivotControlsEnabled: false,
+            startingCells: {},
             _placeholderValue: null,
             _placeholderSet: () => {
                 set((state) => {

@@ -1,0 +1,23 @@
+.knob-label-min-max-default {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: black;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.knob-label-default {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: black;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.knob-value-default {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: white;
+    font-weight: bold;
+    pointer-events: none;
+}

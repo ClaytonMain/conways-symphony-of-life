@@ -1,5 +1,5 @@
 .htmlDefault {
-    cursor: pointer;
+    /* cursor: pointer; */
     display: flex;
     flex-direction: column;
     max-width: 100%;

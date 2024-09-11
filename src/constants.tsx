@@ -4,6 +4,7 @@ import {
     GameWrapMode,
     NoteAccidental,
     NoteName,
+    NoteOctave,
 } from "./sharedTypes";
 
 export const initialSequencerLength = 16;
@@ -33,11 +34,13 @@ export const chordRoots: Array<`${NoteName}${NoteAccidental}`> = [
     "A#",
     "B",
 ];
+export const octaves: NoteOctave[] = [
+    -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+];
 
 // Old code below:
 export const initialDimensions: [number, number] = [16, 16];
 // export const drumTypes: Array<DrumType> = ["Kick", "Snare", "HiHat"];
-export const octaves = [-4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 // export const noteNames: Array<Note> = [
 //     "Cb",
 //     "C",

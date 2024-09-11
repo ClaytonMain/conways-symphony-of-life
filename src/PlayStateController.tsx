@@ -12,6 +12,10 @@ export default function PlayStateController() {
             case "paused":
                 return "playing";
             case "stopped":
+                useGlobalStore.setState((state) => {
+                    state.startingCells =
+                        useGlobalStore.getState().sequencerCells;
+                });
                 return "playing";
         }
     }

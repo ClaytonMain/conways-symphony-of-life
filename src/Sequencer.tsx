@@ -170,11 +170,34 @@ function SequencerControls({
             }
         });
     }
+    function handleStop() {
+        const currentPlayState = useGlobalStore.getState().playState;
+        if (currentPlayState === "stopped") return;
+        useGlobalStore.setState((state) => {
+            state.playState = "stopped";
+            state.sequencerCells = useGlobalStore.getState().startingCells;
+        });
+    }
+    function handlePlayPause() {
+        const currentPlayState = useGlobalStore.getState().playState;
+        if (currentPlayState === "stopped") {
+            useGlobalStore.setState((state) => {
+                state.playState = "playing";
+                state.startingCells = useGlobalStore.getState().sequencerCells;
+                state.currentSequencerIndex = null;
+            });
+        } else {
+            useGlobalStore.setState((state) => {
+                state.playState =
+                    state.playState === "playing" ? "paused" : "playing";
+            });
+        }
+    }
     return (
         <>
             <InstrumentButton
                 position={[sequencerLength - 2, sequencerHeight + 0.5, 0]}
-                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.25 }}
+                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
                 scale={[
                     (sequencerCellScale + 2) / 3,
                     (sequencerCellScale + 0.5) / 1.5,
@@ -186,7 +209,7 @@ function SequencerControls({
             />
             <InstrumentButton
                 position={[sequencerLength - 5, sequencerHeight + 0.5, 0]}
-                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.25 }}
+                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
                 scale={[
                     (sequencerCellScale + 2) / 3,
                     (sequencerCellScale + 0.5) / 1.5,
@@ -195,6 +218,30 @@ function SequencerControls({
                 label="RAND"
                 labelDistanceFactor={20}
                 onClick={() => handleRandomize()}
+            />
+            <InstrumentButton
+                position={[sequencerLength - 8, sequencerHeight + 0.5, 0]}
+                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
+                scale={[
+                    (sequencerCellScale + 2) / 3,
+                    (sequencerCellScale + 0.5) / 1.5,
+                    1,
+                ]}
+                label="STOP"
+                labelDistanceFactor={20}
+                onClick={() => handleStop()}
+            />
+            <InstrumentButton
+                position={[sequencerLength - 11, sequencerHeight + 0.5, 0]}
+                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
+                scale={[
+                    (sequencerCellScale + 2) / 3,
+                    (sequencerCellScale + 0.5) / 1.5,
+                    1,
+                ]}
+                label="PLAY/PAUSE"
+                labelDistanceFactor={20}
+                onClick={() => handlePlayPause()}
             />
         </>
     );
