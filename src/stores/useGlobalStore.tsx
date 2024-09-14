@@ -53,12 +53,17 @@ interface GlobalStoreTypes {
     sustain: number;
     release: number;
     noteDuration: number;
+    drumDuration: number;
     cellsIgnorePointerEvents: boolean;
     cellEditMode: CellEditMode;
     noteGroupEditMode: NoteGroupEditMode;
     drumEditMode: DrumEditMode;
     pivotControlsEnabled: boolean;
     startingCells: Record<number, SequencerCell>;
+    noteGroupCellHeight: number;
+    noteGroupCellXOffset: number;
+    displayLabel: string | number | null;
+    displayValue: string | number | null;
     _placeholderValue: null;
     _placeholderSet: () => void;
     _placeholderGet: () => null;
@@ -100,6 +105,7 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             sustain: 0.3,
             release: 0.5,
             noteDuration: 0.2,
+            drumDuration: 0.2,
             // release: 1,
             cellsIgnorePointerEvents: false,
             cellEditMode: null,
@@ -107,6 +113,10 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             drumEditMode: null,
             pivotControlsEnabled: false,
             startingCells: {},
+            noteGroupCellHeight: ((initialSequencerHeight + 4) / 10) * 2,
+            noteGroupCellXOffset: 4.5,
+            displayLabel: null,
+            displayValue: null,
             _placeholderValue: null,
             _placeholderSet: () => {
                 set((state) => {

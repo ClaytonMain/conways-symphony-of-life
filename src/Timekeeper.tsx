@@ -7,8 +7,15 @@ import { useGlobalStore } from "./stores/useGlobalStore";
 import { playDrums, playSynthNotes } from "./synthAndDrumFunctions";
 
 export default function Timekeeper() {
-    const { sequencerLength, npm, npt, npg, playState, noteDuration } =
-        useGlobalStore((state) => state);
+    const {
+        sequencerLength,
+        npm,
+        npt,
+        npg,
+        playState,
+        noteDuration,
+        drumDuration,
+    } = useGlobalStore((state) => state);
     const indexDurationRef = useRef(0);
     const sequencerIndexRef = useRef(
         useGlobalStore.getState().currentSequencerIndex
@@ -200,7 +207,7 @@ export default function Timekeeper() {
             .filter((cell) => cell.alive)
             .map((cell) => cell.drumType);
         if (drumSampler && drumTypesToPlay.length > 0) {
-            playDrums(drumSampler, drumTypesToPlay);
+            playDrums(drumSampler, drumTypesToPlay, drumDuration);
         }
 
         useGlobalStore.setState((state) => {

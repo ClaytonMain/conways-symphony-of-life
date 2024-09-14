@@ -3,7 +3,7 @@ import { button, useControls } from "leva";
 import { useEffect } from "react";
 import * as THREE from "three";
 import * as Tone from "tone";
-import Knob from "../RangeKnob";
+import Knob from "../controls/RangeKnob";
 import { CellRecord, ShortcutEnum } from "../sharedTypes";
 import { useGridStore } from "./useGridStore";
 

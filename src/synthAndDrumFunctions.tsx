@@ -44,10 +44,11 @@ export function playSynthNotes(
 
 export function playDrums(
     drumSampler: Tone.Sampler,
-    drumTypesToPlay: DrumType[]
+    drumTypesToPlay: DrumType[],
+    drumDuration: number
 ) {
     for (const drumType of drumTypesToPlay) {
-        drumSampler.triggerAttackRelease(drumNoteMap[drumType], "4n");
+        drumSampler.triggerAttackRelease(drumNoteMap[drumType], drumDuration);
     }
 }
 
@@ -58,7 +59,7 @@ export function initializeDrumCells(sequencerLength: number) {
         drumTypes.forEach((drumType) => {
             drumColumn.push({
                 alive:
-                    drumType === "HiHat"
+                    drumType === "HiHat" && i % 2 === 1
                         ? true
                         : drumType === "Snare" && i % 4 === 2
                         ? true

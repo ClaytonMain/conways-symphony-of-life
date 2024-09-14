@@ -1,15 +1,12 @@
 import {
     createInstances,
-    Icosahedron,
     InstancedAttribute,
     useCursor,
 } from "@react-three/drei";
-import { ThreeEvent, useFrame } from "@react-three/fiber";
-import { useEffect, useRef, useState } from "react";
-import * as THREE from "three";
+import { ThreeEvent } from "@react-three/fiber";
+import { useEffect, useState } from "react";
 import { WebGLProgramParametersWithUniforms } from "three";
-import { aliveStates, sequencerCellScale } from "./constants";
-import InstrumentButton from "./InstrumentButton";
+import { aliveStates, colors, sequencerCellScale } from "./constants";
 import { PointerEventTypes } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
 
@@ -31,10 +28,6 @@ function SequencerCell({ index }: SequencerCellProps) {
     const [playing, setPlaying] = useState(cellRecord.playing);
     const [sequenceColumnActive, setSequenceColumnActive] = useState(false);
     const [hovered, setHovered] = useState(false);
-    // const [sequenceRowActive, setSequenceRowActive] = useState(false);
-    // const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
-    //     useGlobalStore.getState().currentNoteGroupIndex
-    // );
     useCursor(hovered);
 
     useEffect(() => {
@@ -74,6 +67,20 @@ function SequencerCell({ index }: SequencerCellProps) {
         );
         return () => {
             unsubSequenceColumnActive();
+        };
+    });
+
+    useEffect(() => {
+        const unsubPlayState = useGlobalStore.subscribe(
+            (state) => state.playState,
+            (value) => {
+                if (value === "stopped" && sequenceColumnActive) {
+                    setSequenceColumnActive(false);
+                }
+            }
+        );
+        return () => {
+            unsubPlayState();
         };
     });
 
@@ -126,12 +133,12 @@ function SequencerCell({ index }: SequencerCellProps) {
             specialCellState={cellRecord.state === "invincible" ? 1 : 0}
             color={
                 playing
-                    ? "white"
+                    ? colors.playingCell
                     : alive
-                    ? "yellow"
+                    ? colors.aliveCell
                     : sequenceColumnActive
-                    ? "gray"
-                    : "black"
+                    ? colors.activeCell
+                    : colors.deadCell
             }
             onPointerDown={(e) =>
                 handlePointerEvents({ e, pointerEventType: "down" })
@@ -143,107 +150,6 @@ function SequencerCell({ index }: SequencerCellProps) {
                 handlePointerEvents({ e, pointerEventType: "out" })
             }
         />
-    );
-}
-
-interface SequencerControlsProps {
-    sequencerLength: number;
-    sequencerHeight: number;
-}
-
-function SequencerControls({
-    sequencerLength,
-    sequencerHeight,
-}: SequencerControlsProps) {
-    function handleClear() {
-        useGlobalStore.setState((state) => {
-            for (const cellKey in state.sequencerCells) {
-                state.sequencerCells[cellKey].state = "dead";
-            }
-        });
-    }
-    function handleRandomize() {
-        useGlobalStore.setState((state) => {
-            for (const cellKey in state.sequencerCells) {
-                state.sequencerCells[cellKey].state =
-                    Math.random() > 0.8 ? "alive" : "dead";
-            }
-        });
-    }
-    function handleStop() {
-        const currentPlayState = useGlobalStore.getState().playState;
-        if (currentPlayState === "stopped") return;
-        useGlobalStore.setState((state) => {
-            state.playState = "stopped";
-            state.sequencerCells = useGlobalStore.getState().startingCells;
-        });
-    }
-    function handlePlayPause() {
-        const currentPlayState = useGlobalStore.getState().playState;
-        if (currentPlayState === "stopped") {
-            useGlobalStore.setState((state) => {
-                state.playState = "playing";
-                state.startingCells = useGlobalStore.getState().sequencerCells;
-                state.currentSequencerIndex = null;
-            });
-        } else {
-            useGlobalStore.setState((state) => {
-                state.playState =
-                    state.playState === "playing" ? "paused" : "playing";
-            });
-        }
-    }
-    return (
-        <>
-            <InstrumentButton
-                position={[sequencerLength - 2, sequencerHeight + 0.5, 0]}
-                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
-                scale={[
-                    (sequencerCellScale + 2) / 3,
-                    (sequencerCellScale + 0.5) / 1.5,
-                    1,
-                ]}
-                label="CLEAR"
-                labelDistanceFactor={20}
-                onClick={() => handleClear()}
-            />
-            <InstrumentButton
-                position={[sequencerLength - 5, sequencerHeight + 0.5, 0]}
-                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
-                scale={[
-                    (sequencerCellScale + 2) / 3,
-                    (sequencerCellScale + 0.5) / 1.5,
-                    1,
-                ]}
-                label="RAND"
-                labelDistanceFactor={20}
-                onClick={() => handleRandomize()}
-            />
-            <InstrumentButton
-                position={[sequencerLength - 8, sequencerHeight + 0.5, 0]}
-                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
-                scale={[
-                    (sequencerCellScale + 2) / 3,
-                    (sequencerCellScale + 0.5) / 1.5,
-                    1,
-                ]}
-                label="STOP"
-                labelDistanceFactor={20}
-                onClick={() => handleStop()}
-            />
-            <InstrumentButton
-                position={[sequencerLength - 11, sequencerHeight + 0.5, 0]}
-                roundedBoxProps={{ args: [3, 1.5, 1], radius: 0.1 }}
-                scale={[
-                    (sequencerCellScale + 2) / 3,
-                    (sequencerCellScale + 0.5) / 1.5,
-                    1,
-                ]}
-                label="PLAY/PAUSE"
-                labelDistanceFactor={20}
-                onClick={() => handlePlayPause()}
-            />
-        </>
     );
 }
 
@@ -276,26 +182,8 @@ void main() {
         return shader;
     }
 
-    const ref = useRef<THREE.Mesh>(null!);
-    useFrame((_, delta) => {
-        ref.current.rotation.x += 2.0 * delta;
-        ref.current.rotation.y += 1.0 * delta;
-        ref.current.rotation.z += 0.5 * delta;
-    });
-
     return (
         <group>
-            <Icosahedron
-                ref={ref}
-                position={[0, sequencerHeight + 5, 0]}
-                scale={2}
-            >
-                <meshStandardMaterial
-                    color="lightblue"
-                    roughness={0.2}
-                    metalness={0.7}
-                />
-            </Icosahedron>
             <SequencerCellInstances limit={sequencerLength * sequencerHeight}>
                 <planeGeometry />
                 <meshBasicMaterial
@@ -314,10 +202,6 @@ void main() {
                     />
                 ))}
             </SequencerCellInstances>
-            <SequencerControls
-                sequencerLength={sequencerLength}
-                sequencerHeight={sequencerHeight}
-            />
         </group>
     );
 }

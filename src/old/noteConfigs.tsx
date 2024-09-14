@@ -1,12 +1,10 @@
-import { initialDimensions } from "../constants";
 import {
     GenerateNoteConfigsProps,
-    Note,
     NoteAndOctave,
     NoteConfig,
     NoteConfigCell,
 } from "../sharedTypes";
-
+const initialDimensions = [16, 16];
 const notes: Note[] = [
     "C",
     "Db",

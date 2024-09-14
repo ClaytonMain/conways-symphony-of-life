@@ -1,28 +1,16 @@
 import {
-    Html,
     Instance,
     Instances,
-    PivotControls,
     useCursor,
     useKeyboardControls,
 } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useState } from "react";
-import { chordRoots, octaves } from "./constants";
+import { colors } from "./constants";
 import HtmlLabel from "./HtmlLabel";
-import InstrumentArrowSelect from "./InstrumentArrowSelect";
-import { generateNoteGroupNotes } from "./noteGroupFunctions";
 import "./NoteGroups.css";
-import {
-    NoteAccidental,
-    NoteGroupChangeMode,
-    NoteName,
-    NoteOctave,
-    PointerEventTypes,
-    ShortcutEnum,
-} from "./sharedTypes";
+import { PointerEventTypes, ShortcutEnum } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
-import ValuesKnob from "./ValuesKnob";
 
 interface NoteGroupCellComponentProps {
     index: number;
@@ -139,7 +127,13 @@ function NoteGroupCellComponent({
                     cellHeight / 2,
                 0,
             ]}
-            color={active ? "white" : enabled ? "gray" : "black"}
+            color={
+                active
+                    ? colors.playingCell
+                    : enabled
+                    ? colors.activeCell
+                    : colors.deadCell
+            }
             onPointerDown={(e) => {
                 handlePointerEvents({ e, pointerEventType: "down" });
             }}
@@ -204,415 +198,13 @@ function RowNoteLabel({ index }: RowNoteLabelProps) {
     );
 }
 
-interface SemitoneButtonProps {
-    index: number;
-}
-
-function SemitoneButton({ index }: SemitoneButtonProps) {
-    const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
-        useGlobalStore.getState().currentNoteGroupIndex
-    );
-    const [active, setActive] = useState(
-        useGlobalStore
-            .getState()
-            .noteGroupCells[currentNoteGroupIndex].semitones.includes(index)
-    );
-    const [hovered, setHovered] = useState(false);
-    useCursor(hovered);
-
-    useEffect(() => {
-        const unsubNoteGroupIndex = useGlobalStore.subscribe(
-            (state) => state.currentNoteGroupIndex,
-            (value) => {
-                setCurrentNoteGroupIndex(value);
-                setActive(
-                    useGlobalStore
-                        .getState()
-                        .noteGroupCells[value].semitones.includes(index)
-                );
-            }
-        );
-        return () => {
-            unsubNoteGroupIndex();
-        };
-    });
-
-    function handlePointerEvents({
-        e,
-        pointerEventType,
-    }: {
-        e: ThreeEvent<PointerEvent>;
-        pointerEventType: PointerEventTypes;
-    }) {
-        const buttonsBinary = e.buttons.toString(2).padStart(5, "0");
-        const primaryMouse = buttonsBinary.charAt(4) === "1";
-
-        if (["down", "over"].includes(pointerEventType)) {
-            if (useGlobalStore.getState().cellsIgnorePointerEvents) return;
-            if (pointerEventType === "over") {
-                setHovered(true);
-            }
-            if (primaryMouse) {
-                const activeSemitones =
-                    useGlobalStore.getState().noteGroupCells[
-                        currentNoteGroupIndex
-                    ].semitones;
-                let newSemitones: number[] = [];
-                if (!active) {
-                    newSemitones = [...activeSemitones, index];
-                    newSemitones.sort((a, b) => a - b);
-                } else {
-                    activeSemitones.forEach((semitone) => {
-                        if (semitone !== index) {
-                            newSemitones.push(semitone);
-                        }
-                    });
-                }
-                setActive(!active);
-                const currentNoteGroup =
-                    useGlobalStore.getState().noteGroupCells[
-                        currentNoteGroupIndex
-                    ];
-                const sequencerHeight =
-                    useGlobalStore.getState().sequencerHeight;
-                const newNotes = generateNoteGroupNotes(
-                    sequencerHeight,
-                    currentNoteGroup.root,
-                    newSemitones,
-                    currentNoteGroup.octaveStart,
-                    currentNoteGroup.octaveIncrement
-                );
-                console.log(newSemitones);
-                useGlobalStore.setState((state) => {
-                    state.noteGroupCells[currentNoteGroupIndex].notes =
-                        newNotes;
-                    state.noteGroupCells[currentNoteGroupIndex].semitones =
-                        newSemitones;
-                });
-            }
-        }
-        if (pointerEventType === "out") {
-            setHovered(false);
-        }
-    }
-
-    return (
-        <Instance
-            scale={0.95}
-            position={[-2 + Math.floor(index / 6), (index % 6) - 5, 0]}
-            color={active ? "white" : "black"}
-            onPointerDown={(e) => {
-                handlePointerEvents({ e, pointerEventType: "down" });
-            }}
-            onPointerOver={(e) => {
-                handlePointerEvents({ e, pointerEventType: "over" });
-            }}
-            onPointerOut={(e) => {
-                handlePointerEvents({ e, pointerEventType: "out" });
-            }}
-        />
-    );
-}
-
-interface SemitoneControlsProps {
-    position?: [number, number, number];
-}
-function SemitoneControls({ position = [0, 0, 0] }: SemitoneControlsProps) {
-    return (
-        <group position={position}>
-            <Html
-                center
-                transform
-                distanceFactor={10}
-                className="semitone-controls-header"
-                position={[-0.5, 0.8, 0]}
-            >
-                SEMITONES
-            </Html>
-            <Instances limit={24}>
-                <planeGeometry args={[1, 1]} />
-                <meshBasicMaterial />
-                {Array.from({ length: 24 }).map((_, i) => {
-                    return (
-                        <SemitoneButton
-                            key={i}
-                            index={i}
-                        />
-                    );
-                })}
-            </Instances>
-            {Array.from({ length: 6 }).map((_, i) => {
-                return (
-                    <Html
-                        key={i}
-                        center
-                        transform
-                        distanceFactor={10}
-                        className="semitone-controls-label"
-                        position={[-2.75, -5 + i, 0]}
-                    >
-                        {i}
-                    </Html>
-                );
-            })}
-            {Array.from({ length: 4 }).map((_, i) => {
-                return (
-                    <Html
-                        key={i}
-                        center
-                        transform
-                        distanceFactor={10}
-                        className="semitone-controls-label"
-                        position={[-2 + i, -5.75, 0]}
-                    >
-                        {i * 6}
-                    </Html>
-                );
-            })}
-        </group>
-    );
-}
-
-interface NoteGroupControlsProps {
-    noteGroupCellHeight: number;
-    sequencerHeight: number;
-    baseXOffset?: number;
-}
-
-function NoteGroupControls({
-    noteGroupCellHeight,
-    sequencerHeight,
-    baseXOffset = 0,
-}: NoteGroupControlsProps) {
-    const pivotControlsEnabled = useGlobalStore(
-        (state) => state.pivotControlsEnabled
-    );
-    const octaveIncrements = [-3, -2, -1, 0, 1, 2, 3];
-    const noteGroupChangeMode = useGlobalStore(
-        (state) => state.noteGroupChangeMode
-    );
-    const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
-        useGlobalStore.getState().currentNoteGroupIndex
-    );
-    const [rootName, setRootName] = useState(
-        useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex].root
-    );
-    const [octaveStart, setOctaveStart] = useState(
-        useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex]
-            .octaveStart
-    );
-    const [octaveIncrement, setOctaveIncrement] = useState(
-        useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex]
-            .octaveIncrement
-    );
-
-    useEffect(() => {
-        const unsubIndex = useGlobalStore.subscribe(
-            (state) => state.currentNoteGroupIndex,
-            (value) => {
-                setCurrentNoteGroupIndex(value);
-                const currentNoteGroup =
-                    useGlobalStore.getState().noteGroupCells[value];
-                setRootName(currentNoteGroup.root);
-                setOctaveStart(currentNoteGroup.octaveStart);
-                setOctaveIncrement(currentNoteGroup.octaveIncrement);
-            }
-        );
-        return () => {
-            unsubIndex();
-        };
-    });
-
-    function handleNoteGenerationParamsChange(
-        value: string | number,
-        callingFrom: "chordRoot" | "octaveStart" | "octaveIncrement"
-    ) {
-        const currentNoteGroupIndex =
-            useGlobalStore.getState().currentNoteGroupIndex;
-        const currentNoteGroup =
-            useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex];
-        const sequencerHeight = useGlobalStore.getState().sequencerHeight;
-        const chordRoot =
-            callingFrom === "chordRoot"
-                ? (value as `${NoteName}${NoteAccidental}`)
-                : currentNoteGroup.root;
-        const octaveStart =
-            callingFrom === "octaveStart"
-                ? (value as NoteOctave)
-                : currentNoteGroup.octaveStart;
-        const octaveIncrement =
-            callingFrom === "octaveIncrement"
-                ? (value as number)
-                : currentNoteGroup.octaveIncrement;
-        const newNotes = generateNoteGroupNotes(
-            sequencerHeight,
-            chordRoot,
-            currentNoteGroup.semitones,
-            octaveStart,
-            octaveIncrement
-        );
-        useGlobalStore.setState((state) => {
-            state.noteGroupCells[currentNoteGroupIndex].notes = newNotes;
-            state.noteGroupCells[currentNoteGroupIndex].root = chordRoot;
-            state.noteGroupCells[currentNoteGroupIndex].octaveStart =
-                octaveStart;
-            state.noteGroupCells[currentNoteGroupIndex].octaveIncrement =
-                octaveIncrement;
-        });
-    }
-
-    const groupChangeDisplayOptions = [
-        "SEQUENTIAL",
-        "RANDOM",
-        "SEMIRANDOM",
-        "NONE",
-    ];
-    const groupChangeModeOptions: NoteGroupChangeMode[] = [
-        "sequential",
-        "true random",
-        "avoid prev random",
-        null,
-    ];
-    function handleGroupChangeModeChange(value: string | number) {
-        useGlobalStore.setState((state) => {
-            state.noteGroupChangeMode =
-                groupChangeModeOptions[
-                    groupChangeDisplayOptions.indexOf(value as string)
-                ];
-        });
-    }
-
-    return (
-        <group
-            position={[
-                -baseXOffset - noteGroupCellHeight * 2,
-                sequencerHeight - 0.5,
-                0,
-            ]}
-        >
-            <PivotControls
-                enabled={pivotControlsEnabled}
-                activeAxes={[true, true, false]}
-                depthTest={false}
-                offset={[4.8, 2.43, 0]}
-            >
-                <InstrumentArrowSelect
-                    position={[4.8, 1.43, 0]}
-                    roundedBoxProps={{ args: [4, 1.5, 1] }}
-                    orientation="horizontal"
-                    label="GRP CHNG MODE"
-                    options={groupChangeDisplayOptions}
-                    startingOptionIndex={groupChangeModeOptions.indexOf(
-                        noteGroupChangeMode
-                    )}
-                    onChange={(value) => {
-                        handleGroupChangeModeChange(value);
-                    }}
-                    labelStyle={{ width: "100px", fontSize: "0.5rem" }}
-                    optionStyle={{ width: "100px", fontSize: "1.0rem" }}
-                />
-            </PivotControls>
-            <PivotControls
-                enabled={pivotControlsEnabled}
-                activeAxes={[true, true, false]}
-                depthTest={false}
-                offset={[-1, 0.5, 0]}
-            >
-                <InstrumentArrowSelect
-                    position={[-1, -0.35, 0]}
-                    roundedBoxProps={{ args: [2, 1.5, 1] }}
-                    orientation="horizontal"
-                    label="ROOT"
-                    options={chordRoots}
-                    startingOptionIndex={chordRoots.indexOf(rootName)}
-                    onChange={(value) => {
-                        handleNoteGenerationParamsChange(value, "chordRoot");
-                    }}
-                />
-            </PivotControls>
-            <PivotControls
-                enabled={pivotControlsEnabled}
-                activeAxes={[true, true, false]}
-                depthTest={false}
-                offset={[-1.0, -1.3, 0]}
-            >
-                <SemitoneControls position={[-0.5, -2.3, 0]} />
-            </PivotControls>
-            <PivotControls
-                enabled={pivotControlsEnabled}
-                activeAxes={[true, true, false]}
-                depthTest={false}
-                offset={[-1, -8.2, 0]}
-            >
-                <InstrumentArrowSelect
-                    position={[-1, -9.2, 0]}
-                    roundedBoxProps={{ args: [2, 1.5, 1] }}
-                    orientation="horizontal"
-                    label="8VE STRT"
-                    options={octaves}
-                    startingOptionIndex={octaves.indexOf(octaveStart)}
-                    onChange={(value) => {
-                        handleNoteGenerationParamsChange(value, "octaveStart");
-                    }}
-                />
-            </PivotControls>
-            <PivotControls
-                enabled={pivotControlsEnabled}
-                activeAxes={[true, true, false]}
-                depthTest={false}
-                offset={[-1, -10, 0]}
-            >
-                <InstrumentArrowSelect
-                    position={[-1, -11.0, 0]}
-                    roundedBoxProps={{ args: [2, 1.5, 1] }}
-                    orientation="horizontal"
-                    label="8VE++"
-                    options={octaveIncrements}
-                    startingOptionIndex={octaveIncrements.indexOf(
-                        octaveIncrement
-                    )}
-                    onChange={(value) => {
-                        handleNoteGenerationParamsChange(
-                            value,
-                            "octaveIncrement"
-                        );
-                    }}
-                />
-            </PivotControls>
-            <PivotControls
-                enabled={pivotControlsEnabled}
-                activeAxes={[true, true, false]}
-                depthTest={false}
-                offset={[0, 0, 0]}
-            >
-                <ValuesKnob
-                    values={[1, 2, 4, 8, 16]}
-                    startIndex={2}
-                    position={[-1, 6, 0]}
-                    label="NPG"
-                    onChange={(value) => {
-                        useGlobalStore.setState({ npg: value as number });
-                    }}
-                />
-            </PivotControls>
-        </group>
-    );
-}
-
 export default function NoteGroups() {
-    // const currentNoteGroupIndex = useGlobalStore(
-    //     (state) => state.currentNoteGroupIndex
-    // );
     const sequencerHeight = useGlobalStore((state) => state.sequencerHeight);
-    // const noteGroupChangeMode = useGlobalStore(
-    //     (state) => state.noteGroupChangeMode
-    // );
     const noteGroupCells = useGlobalStore((state) => state.noteGroupCells);
-    // const noteGroupEditMode = useGlobalStore(
-    //     (state) => state.noteGroupEditMode
-    // );
-    const noteGroupCellHeight = (sequencerHeight / 10) * 2;
-    const baseXOffset = 4.1;
+    const noteGroupCellHeight = useGlobalStore(
+        (state) => state.noteGroupCellHeight
+    );
+    const baseXOffset = useGlobalStore((state) => state.noteGroupCellXOffset);
 
     return (
         <group position={[0, -0.5, 0]}>
@@ -641,11 +233,6 @@ export default function NoteGroups() {
                     />
                 );
             })}
-            <NoteGroupControls
-                noteGroupCellHeight={noteGroupCellHeight}
-                sequencerHeight={sequencerHeight}
-                baseXOffset={baseXOffset}
-            />
         </group>
     );
 }

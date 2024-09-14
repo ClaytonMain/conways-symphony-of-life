@@ -1,8 +1,15 @@
 import { DragControls, Html, Instance, Instances } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import "./ValuesKnob.css";
-import { useGlobalStore } from "./stores/useGlobalStore";
+import {
+    buttonMaterial,
+    genericBoxGeometry,
+    genericCircleGeometry,
+    knobDotMaterial,
+    knobGeometry,
+} from "../constants";
+import { useGlobalStore } from "../stores/useGlobalStore";
+import "./Controls.css";
 
 interface KnobTickProps {
     position: [number, number, number];
@@ -12,88 +19,84 @@ interface KnobTickProps {
 function KnobTick({ position, rotation }: KnobTickProps) {
     return (
         <Instance
+            scale={[0.2, 0.1, 0.1]}
             position={position}
             rotation={rotation}
         />
     );
 }
 
-interface ValuesKnobProps {
-    values: Array<number | string>;
-    startIndex?: number;
+interface RangeKnobProps {
     position?: [number, number, number];
     scale?: number;
+    ticks?: number;
     angleRangeValues?: [number, number];
-    knobColor?: string;
-    knobDotColor?: string;
-    knobTickColor?: string;
-    onChange?: (value: number | string) => void;
-    onDragEnd?: (value: number | string) => void;
+    minValue?: number;
+    maxValue?: number;
+    startValue?: number;
+    snap?: boolean;
+    onChange?: (value: number) => void;
+    onDragEnd?: (value: number) => void;
     label?: string;
     labelStyle?: React.CSSProperties;
-    labelOptions?: boolean;
-    labelOptionsStyle?: React.CSSProperties;
+    labelMinMax?: boolean;
+    labelMinMaxStyle?: React.CSSProperties;
+    fixedDecimal?: number;
 }
 
-export default function ValuesKnob({
-    values,
-    startIndex = 0,
+export default function RangeKnob({
     position = [0, 0, 0],
     scale = 1,
+    ticks = 11,
     angleRangeValues = [(7 * Math.PI) / 6, -Math.PI / 6],
-    knobColor = "#545454",
-    knobDotColor = "#f5ebc6",
-    knobTickColor = "#545454",
-    onChange = (value: number | string) => {
+    minValue = 0,
+    maxValue = 100,
+    startValue = 50,
+    snap = true,
+    onChange = (value: number) => {
         value;
     },
-    onDragEnd = (value: number | string) => {
+    onDragEnd = (value: number) => {
         value;
     },
     label = "",
     labelStyle = {},
-    labelOptions = true,
-    labelOptionsStyle = {},
-}: ValuesKnobProps) {
-    const tickGeometry = new THREE.BoxGeometry(0.2, 0.1, 0.1);
-    const tickMaterial = new THREE.MeshBasicMaterial({ color: knobTickColor });
+    labelMinMax = true,
+    labelMinMaxStyle = {},
+    fixedDecimal = 0,
+}: RangeKnobProps) {
     const knobRadius = 1;
     const ref = useRef<THREE.Group>(null!);
     const dragStartRotationRef = useRef(0);
-    const dragStartIndexRef = useRef(startIndex);
-    const ticks = values.length;
-    if (ticks < 2) {
-        throw new Error("ValuesKnob requires at least 2 values.");
-    }
+    const dragStartValueRef = useRef(startValue);
     const snapFactor =
         (angleRangeValues[0] - angleRangeValues[1]) / (ticks - 1);
-    const [index, setIndex] = useState(startIndex);
+    const [value, setValue] = useState(startValue);
     const angleRange = angleRangeValues[0] - angleRangeValues[1];
-
-    const latheGeometryPoints = [
-        new THREE.Vector2(1, 0).multiplyScalar(knobRadius),
-        new THREE.Vector2(0.75, 0.2).multiplyScalar(knobRadius),
-        new THREE.Vector2(0.65, 1).multiplyScalar(knobRadius),
-        new THREE.Vector2(0.0, 1).multiplyScalar(knobRadius),
-    ];
-    const knobGeometry = new THREE.LatheGeometry(latheGeometryPoints, 24);
 
     function handleOnDrag(deltaLocalMatrix: THREE.Matrix4) {
         const dragY = deltaLocalMatrix.toArray()[13];
-
-        const newIndex = Math.round(
-            Math.max(Math.min(dragStartIndexRef.current + dragY, ticks - 1), 0)
+        const dragFactor = maxValue - minValue;
+        const normalizedDragY = (dragY * dragFactor) / (ticks - 1);
+        const valueSnapFactor = dragFactor / (ticks - 1);
+        let newValue = Math.max(
+            Math.min(dragStartValueRef.current + normalizedDragY, maxValue),
+            minValue
         );
-        const rotationPercent = newIndex / (ticks - 1);
+        if (snap) {
+            newValue = Math.round(newValue / valueSnapFactor) * valueSnapFactor;
+        }
+        newValue = parseFloat(newValue.toFixed(fixedDecimal));
+        const rotationPercent = (newValue - minValue) / dragFactor;
         const rotationAngle =
             angleRangeValues[0] - angleRange * rotationPercent;
-        setIndex(newIndex);
+        setValue(newValue);
         ref.current.rotation.z = rotationAngle;
         ref.current.updateMatrix();
-        onChange(values[newIndex]);
+        onChange(newValue);
     }
     useEffect(() => {
-        const rotationPercent = index / (ticks - 1);
+        const rotationPercent = (value - minValue) / (maxValue - minValue);
         ref.current.rotation.z =
             angleRangeValues[0] - angleRange * rotationPercent;
         ref.current.updateMatrix();
@@ -105,8 +108,8 @@ export default function ValuesKnob({
             scale={scale}
         >
             <Instances
-                geometry={tickGeometry}
-                material={tickMaterial}
+                geometry={genericBoxGeometry}
+                material={buttonMaterial}
             >
                 {Array.from({ length: ticks }).map((_, i) => {
                     const angle = angleRangeValues[0] - i * snapFactor;
@@ -121,39 +124,43 @@ export default function ValuesKnob({
                     );
                 })}
             </Instances>
-            {labelOptions && (
+            {labelMinMax && (
                 <>
-                    {values.map((val, i) => {
-                        return (
-                            <Html
-                                key={i}
-                                transform
-                                position={[
-                                    Math.cos(
-                                        angleRangeValues[0] - i * snapFactor
-                                    ) *
-                                        (knobRadius + 0.5),
-                                    Math.sin(
-                                        angleRangeValues[0] - i * snapFactor
-                                    ) *
-                                        (knobRadius + 0.5),
-                                    0,
-                                ]}
-                                distanceFactor={10}
-                                className="knob-label-options-default"
-                                style={labelOptionsStyle}
-                            >
-                                {val}
-                            </Html>
-                        );
-                    })}
+                    <Html
+                        transform
+                        position={[
+                            Math.cos(angleRangeValues[0]) * (knobRadius + 0.3) -
+                                minValue.toString().length * 0.1,
+                            Math.sin(angleRangeValues[0]) * (knobRadius + 0.3),
+                            0,
+                        ]}
+                        distanceFactor={10}
+                        className="knob-label"
+                        style={labelMinMaxStyle}
+                    >
+                        {minValue}
+                    </Html>
+                    <Html
+                        transform
+                        position={[
+                            Math.cos(angleRangeValues[1]) * (knobRadius + 0.3) +
+                                maxValue.toString().length * 0.1,
+                            Math.sin(angleRangeValues[1]) * (knobRadius + 0.3),
+                            0,
+                        ]}
+                        distanceFactor={10}
+                        className="knob-label"
+                        style={labelMinMaxStyle}
+                    >
+                        {maxValue}
+                    </Html>
                 </>
             )}
             <Html
                 transform
                 position={[0, -knobRadius - 0.25, 0]}
                 distanceFactor={10}
-                className="knob-label-default"
+                className="knob-label"
                 style={labelStyle}
             >
                 {label}
@@ -162,10 +169,10 @@ export default function ValuesKnob({
                 transform
                 position={[0, 0, 1.01]}
                 distanceFactor={10}
-                className="knob-value-default"
+                className="knob-value"
                 style={labelStyle}
             >
-                {values[index]}
+                {value}
             </Html>
             <DragControls
                 ref={ref}
@@ -173,7 +180,7 @@ export default function ValuesKnob({
                 autoTransform={false}
                 onDragStart={() => {
                     dragStartRotationRef.current = ref.current.rotation.z;
-                    dragStartIndexRef.current = index;
+                    dragStartValueRef.current = value;
                     useGlobalStore.setState({ cellsIgnorePointerEvents: true });
                 }}
                 onDrag={(_, deltaLocalMatrix) => {
@@ -181,26 +188,26 @@ export default function ValuesKnob({
                 }}
                 onDragEnd={() => {
                     dragStartRotationRef.current = ref.current.rotation.z;
-                    dragStartIndexRef.current = index;
+                    dragStartValueRef.current = value;
                     useGlobalStore.setState({
                         cellsIgnorePointerEvents: false,
                     });
-                    onDragEnd(values[index]);
+                    onDragEnd(value);
                 }}
             >
                 <mesh
                     geometry={knobGeometry}
+                    material={buttonMaterial}
+                    material-flatShading={true}
                     rotation={[Math.PI / 2, 0, 0]}
-                >
-                    <meshStandardMaterial
-                        color={knobColor}
-                        flatShading
-                    />
-                </mesh>
-                <mesh position={[0.5, 0, 1.01]}>
-                    <circleGeometry args={[0.1]} />
-                    <meshBasicMaterial color={knobDotColor} />
-                </mesh>
+                    scale={[knobRadius, knobRadius, 1]}
+                />
+                <mesh
+                    position={[0.5, 0, 1.01]}
+                    geometry={genericCircleGeometry}
+                    material={knobDotMaterial}
+                    scale={0.2}
+                />
             </DragControls>
         </group>
     );

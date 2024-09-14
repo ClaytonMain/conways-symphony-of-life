@@ -1,0 +1,59 @@
+.knob-value {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: white;
+    font-weight: bold;
+    user-select: none;
+}
+
+.knob-options {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: black;
+    font-weight: bold;
+    user-select: none;
+}
+
+.knob-label {
+    font-family: monospace;
+    font-size: 1.1rem;
+    color: black;
+    font-weight: bold;
+    user-select: none;
+}
+
+.instrument-button-label {
+    font-weight: bold;
+    font-family: monospace;
+    user-select: none;
+    color: white;
+}
+
+.arrow-select-container {
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    user-select: none;
+}
+
+.arrow-select-label {
+    display: flex;
+    justify-content: center;
+    font-family: monospace;
+    font-size: 0.4rem;
+    width: 2rem;
+    text-align: center;
+    color: white;
+}
+
+.arrow-select-option {
+    display: flex;
+    justify-content: center;
+    font-family: monospace;
+    width: 2rem;
+    font-size: 1.1rem;
+    text-align: center;
+    align-items: center;
+    font-weight: bold;
+    color: white;
+}

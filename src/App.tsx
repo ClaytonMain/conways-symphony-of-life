@@ -12,13 +12,13 @@ import { Suspense, useState } from "react";
 import * as THREE from "three";
 import "./App.css";
 import DetectClick from "./DetectClick";
-import DrumSequencer from "./DrumSequencer";
-import NoteGroups from "./NoteGroups";
 import PlayStateController from "./PlayStateController";
-import Sequencer from "./Sequencer";
 import ShortcutWrapper from "./ShortcutWrapper";
 import SynthAndDrumStatesController from "./SynthAndDrumStatesController";
 import Timekeeper from "./Timekeeper";
+import { colors } from "./constants";
+import Controls from "./controls/Controls";
+import Touchscreen from "./touchscreen/Touchscreen";
 
 enableMapSet();
 
@@ -29,8 +29,6 @@ type OrbitControlsEventTarget = EventTarget & {
 
 function App() {
     const [dpr, setDpr] = useState<number>(1.5);
-    const bgColor = "#eeaa44";
-    // const bgColor = "#1a191f";
     const [minPan, setMinPan] = useState(new THREE.Vector3(-50, -50, 0));
     const [maxPan, setMaxPan] = useState(new THREE.Vector3(50, 50, 0));
     const _v = new THREE.Vector3();
@@ -63,7 +61,6 @@ function App() {
                 orthographic
                 dpr={dpr}
             >
-                {/* <Perf position={"top-left"} /> */}
                 <OrbitControls
                     makeDefault
                     enableRotate={false}
@@ -100,7 +97,7 @@ function App() {
                         <Environment preset="city" />
                         <color
                             attach="background"
-                            args={[bgColor]}
+                            args={[colors.background]}
                         />
                         <ambientLight intensity={0.5} />
                         <Timekeeper />
@@ -113,9 +110,8 @@ function App() {
                             onFit={handleOnFit}
                             margin={1.5}
                         >
-                            <Sequencer />
-                            <NoteGroups />
-                            <DrumSequencer />
+                            <Touchscreen />
+                            <Controls />
                         </Bounds>
                     </ShortcutWrapper>
                 </Suspense>

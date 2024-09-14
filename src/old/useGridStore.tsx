@@ -3,7 +3,6 @@ import * as Tone from "tone";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import { immer } from "zustand/middleware/immer";
-import { initialDimensions } from "../constants.tsx";
 import {
     CellColors,
     CellRecord,
@@ -13,7 +12,7 @@ import {
     NoteConfigCell,
 } from "../sharedTypes.tsx";
 import { defaultNoteConfigCells } from "./noteConfigs.tsx";
-
+const initialDimensions = [16, 16];
 interface GridStoreTypes {
     dimensionX: number;
     dimensionY: number;

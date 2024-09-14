@@ -1,7 +1,7 @@
 import { Instance, Instances, useCursor } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useState } from "react";
-import { drumTypes, sequencerCellScale } from "./constants";
+import { colors, drumTypes, sequencerCellScale } from "./constants";
 import HtmlLabel from "./HtmlLabel";
 import { PointerEventTypes } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
@@ -53,6 +53,21 @@ function DrumCell({ x, y }: DrumCellProps) {
         };
     });
 
+    useEffect(() => {
+        const unsubPlayState = useGlobalStore.subscribe(
+            (state) => state.playState,
+            (value) => {
+                if (value === "stopped") {
+                    setPlaying(false);
+                    setSequenceColumnActive(false);
+                }
+            }
+        );
+        return () => {
+            unsubPlayState();
+        };
+    });
+
     function handlePointerEvents({
         e,
         pointerEventType,
@@ -94,12 +109,12 @@ function DrumCell({ x, y }: DrumCellProps) {
             scale={[sequencerCellScale, sequencerCellScale, 1]}
             color={
                 playing
-                    ? "white"
+                    ? colors.playingCell
                     : alive
-                    ? "yellow"
+                    ? colors.aliveCell
                     : sequenceColumnActive
-                    ? "gray"
-                    : "black"
+                    ? colors.activeCell
+                    : colors.deadCell
             }
             onPointerDown={(e) =>
                 handlePointerEvents({ e, pointerEventType: "down" })
