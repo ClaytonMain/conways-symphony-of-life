@@ -62,8 +62,11 @@ interface GlobalStoreTypes {
     startingCells: Record<number, SequencerCell>;
     noteGroupCellHeight: number;
     noteGroupCellXOffset: number;
+    showValueChangeDisplay: boolean;
     displayLabel: string | number | null;
     displayValue: string | number | null;
+    showNoteGroupEditDisplay: boolean;
+    editingNoteGroups: boolean;
     _placeholderValue: null;
     _placeholderSet: () => void;
     _placeholderGet: () => null;
@@ -115,8 +118,11 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             startingCells: {},
             noteGroupCellHeight: ((initialSequencerHeight + 4) / 10) * 2,
             noteGroupCellXOffset: 4.5,
+            showValueChangeDisplay: false,
             displayLabel: null,
             displayValue: null,
+            showNoteGroupEditDisplay: false,
+            editingNoteGroups: false,
             _placeholderValue: null,
             _placeholderSet: () => {
                 set((state) => {

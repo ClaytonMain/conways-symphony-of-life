@@ -48,6 +48,8 @@ export const colors = {
     lightText: "#ffffff",
     darkText: "#000000",
     highlight1: "#f5ebc6",
+    enabledDiatonic: "#eeaa44",
+    enabledAccidental: "#b07620",
 };
 export const genericBoxGeometry = new THREE.BoxGeometry(1, 1, 1);
 const latheGeometryPoints = [

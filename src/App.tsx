@@ -108,7 +108,7 @@ function App() {
                             clip
                             maxDuration={0}
                             onFit={handleOnFit}
-                            margin={1.5}
+                            margin={1.2}
                         >
                             <Touchscreen />
                             <Controls />

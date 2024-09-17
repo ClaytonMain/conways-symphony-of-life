@@ -304,8 +304,8 @@ function NoteGroupsControls({
         const index = groupChangeDisplayOptions.indexOf(value as string);
         useGlobalStore.setState((state) => {
             state.noteGroupChangeMode = groupChangeModeOptions[index];
-            state.displayLabel = groupChangeDisplayLabels[index];
-            state.displayValue = value as string;
+            state.displayLabel = "Group Change Mode";
+            state.displayValue = groupChangeDisplayLabels[index];
         });
     }
 
@@ -318,7 +318,7 @@ function NoteGroupsControls({
             ]}
         >
             <mesh>
-                <planeGeometry args={[8, 1.5]} />
+                <planeGeometry args={[9, 1.25]} />
                 <meshBasicMaterial color="black" />
             </mesh>
             <Text
@@ -335,6 +335,19 @@ function NoteGroupsControls({
                 label="GRP CHNG MODE"
                 onChange={(value) => {
                     handleGroupChangeModeChange(value);
+                }}
+            />
+            <InstrumentButton
+                position={[3.5, -2.5, 0]}
+                buttonScale={[2.25, 1.0, 1]}
+                label="EDIT"
+                labelDistanceFactor={20}
+                onClick={() => {
+                    useGlobalStore.setState((state) => {
+                        state.editingNoteGroups = true;
+                        state.cellsIgnorePointerEvents = true;
+                        state.playState = "stopped";
+                    });
                 }}
             />
         </group>
