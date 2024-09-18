@@ -319,13 +319,20 @@ function NoteGroupsControls({
         >
             <mesh>
                 <planeGeometry args={[9, 1.25]} />
-                <meshBasicMaterial color="black" />
+                <meshBasicMaterial
+                    color={"black"}
+                    transparent
+                    opacity={0.8}
+                />
             </mesh>
             <Text
                 fontWeight={"bold"}
                 position={[0, 0, 0.1]}
             >
-                <meshBasicMaterial color={colors.background} />
+                <meshBasicMaterial
+                    color={colors.background}
+                    toneMapped={false}
+                />
                 NOTE GROUPS
             </Text>
             <ValuesKnob

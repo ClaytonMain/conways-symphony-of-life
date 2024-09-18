@@ -67,6 +67,8 @@ interface GlobalStoreTypes {
     displayValue: string | number | null;
     showNoteGroupEditDisplay: boolean;
     editingNoteGroups: boolean;
+    pendingNoteGroup: NoteGroupCell | null;
+    playingNoteGroupNotesTimestamp: number | null;
     _placeholderValue: null;
     _placeholderSet: () => void;
     _placeholderGet: () => null;
@@ -123,6 +125,8 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             displayValue: null,
             showNoteGroupEditDisplay: false,
             editingNoteGroups: false,
+            pendingNoteGroup: null,
+            playingNoteGroupNotesTimestamp: null,
             _placeholderValue: null,
             _placeholderSet: () => {
                 set((state) => {

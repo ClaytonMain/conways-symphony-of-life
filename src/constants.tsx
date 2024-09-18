@@ -53,7 +53,7 @@ export const colors = {
 };
 export const genericBoxGeometry = new THREE.BoxGeometry(1, 1, 1);
 const latheGeometryPoints = [
-    new THREE.Vector2(1, 0),
+    new THREE.Vector2(1.0, 0.0),
     new THREE.Vector2(0.75, 0.2),
     new THREE.Vector2(0.65, 1),
     new THREE.Vector2(0.0, 1),

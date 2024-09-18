@@ -99,7 +99,7 @@ function App() {
                             attach="background"
                             args={[colors.background]}
                         />
-                        <ambientLight intensity={0.5} />
+                        <ambientLight intensity={1} />
                         <Timekeeper />
                         <PlayStateController />
                         <SynthAndDrumStatesController />

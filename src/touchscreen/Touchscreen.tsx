@@ -7,14 +7,21 @@ import {
     useTexture,
 } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { motion } from "framer-motion-3d";
+import { motion, useTime } from "framer-motion-3d";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import * as Tone from "tone";
 import { colors, genericBoxGeometry } from "../constants";
 import DrumSequencer from "../DrumSequencer";
+import { generateNoteGroupNotes } from "../noteGroupFunctions";
 import NoteGroups from "../NoteGroups";
 import Sequencer from "../Sequencer";
-import { NoteOctave, PointerEventTypes } from "../sharedTypes";
+import {
+    NoteGroupCell,
+    NoteGroupNote,
+    NoteOctave,
+    PointerEventTypes,
+} from "../sharedTypes";
 import { useGlobalStore } from "../stores/useGlobalStore";
 
 type DisplayVariant = "show" | "hideSlow" | "hideFast";
@@ -148,57 +155,62 @@ function ValueChangeDisplay() {
 
 const keyOffsets = [0, 0.4, 1, 1.6, 2, 3, 3.4, 4, 4.5, 5, 5.6, 6];
 
+interface UpdatePendingNoteGroupParams {
+    semitones?: number[];
+    octaveStart?: NoteOctave;
+    octaveIncrement?: number;
+}
+
 interface PianoKeyProps {
     index: number;
     keysStartXPosition: number;
     whiteKeyWidth: number;
+    synth:
+        | Tone.PolySynth<Tone.Synth<Tone.SynthOptions>>
+        | Tone.MonoSynth
+        | null;
+    pendingNoteGroup: NoteGroupCell;
+    updatePendingNoteGroup: (params: UpdatePendingNoteGroupParams) => void;
 }
 
-function PianoKey({ index, keysStartXPosition, whiteKeyWidth }: PianoKeyProps) {
-    const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
-        useGlobalStore.getState().currentNoteGroupIndex
-    );
-    const [enabled, setEnabled] = useState(
-        useGlobalStore
-            .getState()
-            .noteGroupCells[currentNoteGroupIndex].semitones.includes(index)
-    );
+function PianoKey({
+    index,
+    keysStartXPosition,
+    whiteKeyWidth,
+    synth,
+    pendingNoteGroup,
+    updatePendingNoteGroup,
+}: PianoKeyProps) {
+    const relativeSemitone = index - 12;
+    const enabled = pendingNoteGroup.semitones.includes(relativeSemitone);
     const accidental = [1, 3, 6, 8, 10].includes(index % 12);
     const keyIndex = keyOffsets[index % 12] + Math.floor(index / 12) * 7;
 
-    useEffect(() => {
-        const unsubCurrentNoteGroupIndex = useGlobalStore.subscribe(
-            (state) => state.currentNoteGroupIndex,
-            (value) => {
-                setCurrentNoteGroupIndex(value);
-                setEnabled(
-                    useGlobalStore
-                        .getState()
-                        .noteGroupCells[value].semitones.includes(index)
-                );
-            }
-        );
-        return () => {
-            unsubCurrentNoteGroupIndex();
-        };
-    });
-
     function handleOnClick() {
-        const activeSemitones =
-            useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex]
-                .semitones;
+        const activeSemitones = pendingNoteGroup.semitones;
+        const octaveStart = pendingNoteGroup.octaveStart;
         let newSemitones: number[] = [];
         if (!enabled) {
-            newSemitones = [...activeSemitones, index];
+            newSemitones = [...activeSemitones, relativeSemitone];
             newSemitones.sort((a, b) => a - b);
+            synth?.triggerAttackRelease(
+                Tone.Frequency(`C${octaveStart}`)
+                    .transpose(relativeSemitone)
+                    .toFrequency(),
+                "8n"
+            );
         } else {
+            if (activeSemitones.length < 4) {
+                // @todo: Notify user that at least 3 noted must be enabled.
+                return;
+            }
             activeSemitones.forEach((semitone) => {
-                if (semitone !== index) {
+                if (semitone !== relativeSemitone) {
                     newSemitones.push(semitone);
                 }
             });
         }
-        setEnabled(!enabled);
+        updatePendingNoteGroup({ semitones: newSemitones });
     }
 
     return (
@@ -241,21 +253,28 @@ interface ScreenArrowSelectorProps {
     animate?: DisplayVariant;
     variants?: DisplayVariants;
     label?: string;
+    labelScale?: [number, number, number] | number | THREE.Vector3;
 }
 function ScreenArrowSelector({
     position,
     options,
+    optionScale = 1,
     startingOptionIndex = 0,
     onIndexChange,
     animate,
     variants,
     label,
+    labelScale = 1,
 }: ScreenArrowSelectorProps) {
     const [currentOptionIndex, setCurrentOptionIndex] =
         useState(startingOptionIndex);
     const arrowButtonAlphaMap = useTexture("images/ArrowButtonAlphaMap.png");
     const [hovered, setHovered] = useState(false);
     useCursor(hovered);
+
+    useEffect(() => {
+        setCurrentOptionIndex(startingOptionIndex);
+    }, [startingOptionIndex]);
 
     function handleOnClick(increment: -1 | 1) {
         const newIndex =
@@ -335,6 +354,8 @@ function ScreenArrowSelector({
             <Text
                 fontWeight={"bold"}
                 position={[0, 0, 0.01]}
+                textAlign="center"
+                scale={optionScale}
             >
                 <motion.meshBasicMaterial
                     initial={"hidden"}
@@ -347,7 +368,11 @@ function ScreenArrowSelector({
             </Text>
             <Text
                 fontWeight={"bold"}
-                position={[0, -2.5, 0.01]}
+                position={[0, -1.75, 0.01]}
+                textAlign="center"
+                anchorY={"top"}
+                fontSize={0.5}
+                scale={labelScale}
             >
                 <motion.meshBasicMaterial
                     initial={"hidden"}
@@ -362,29 +387,208 @@ function ScreenArrowSelector({
     );
 }
 
-interface NoteGroupEditDisplayProps {
-    displayPlaneArgs: [number, number];
+interface ScreenLabelOrButtonProps {
+    position?: [number, number, number];
+    label?: string;
+    labelScale?: [number, number, number] | number | THREE.Vector3;
+    labelMotionMaterialElement?: JSX.Element;
+    labelFontWeight?: "bold" | "normal";
+    labelTextAlign?: "center" | "left" | "right";
+    labelAnchorX?: "center" | "left" | "right";
+    labelAnchorY?:
+        | number
+        | "top"
+        | "bottom"
+        | "middle"
+        | "top-baseline"
+        | "bottom-baseline";
+    onClick?: () => void;
+    variant?: DisplayVariant;
 }
 
-function NoteGroupEditDisplay({ displayPlaneArgs }: NoteGroupEditDisplayProps) {
+function ScreenLabelOrButton({
+    position = [0, 0, 0],
+    label,
+    labelScale = 1,
+    labelMotionMaterialElement,
+    labelFontWeight = "bold",
+    labelTextAlign = "center",
+    labelAnchorX,
+    labelAnchorY,
+    onClick,
+    variant,
+}: ScreenLabelOrButtonProps) {
+    const [hovered, setHovered] = useState(false);
+    useCursor(hovered);
+    function handlePointerEvents({
+        pointerEventType,
+    }: {
+        pointerEventType: PointerEventTypes;
+    }) {
+        if (variant !== "show" || onClick === undefined) return;
+        if (pointerEventType === "over") {
+            setHovered(true);
+        } else if (pointerEventType === "out") {
+            setHovered(false);
+        }
+    }
+    return (
+        <>
+            <Instance
+                position={position}
+                scale={[2 * 0.95, 1.0 * 0.95, 0.01]}
+                onClick={onClick}
+                onPointerOver={() =>
+                    handlePointerEvents({ pointerEventType: "over" })
+                }
+                onPointerOut={() =>
+                    handlePointerEvents({ pointerEventType: "out" })
+                }
+            />
+            <Text
+                position={[0, position[1], 0.01]}
+                scale={labelScale}
+                fontWeight={labelFontWeight}
+                textAlign={labelTextAlign}
+                anchorX={labelAnchorX}
+                anchorY={labelAnchorY}
+            >
+                {labelMotionMaterialElement}
+                {label}
+            </Text>
+        </>
+    );
+}
+
+interface NoteGroupEditNotesDisplayProps {
+    index: number;
+    position?: [number, number, number];
+    label?: string;
+    labelScale?: [number, number, number] | number | THREE.Vector3;
+    labelMotionMaterialElement?: JSX.Element;
+    labelFontWeight?: "bold" | "normal";
+    labelTextAlign?: "center" | "left" | "right";
+    labelAnchorX?: "center" | "left" | "right";
+    labelAnchorY?:
+        | number
+        | "top"
+        | "bottom"
+        | "middle"
+        | "top-baseline"
+        | "bottom-baseline";
+    onClick?: () => void;
+    variant?: DisplayVariant;
+}
+
+function NoteGroupEditNotesDisplay({
+    index,
+    position = [0, 0, 0],
+    label,
+    labelScale = 1,
+    labelMotionMaterialElement,
+    labelFontWeight = "bold",
+    labelTextAlign = "center",
+    labelAnchorX,
+    labelAnchorY,
+    onClick,
+    variant,
+}: NoteGroupEditNotesDisplayProps) {
+    const [playing, setPlaying] = useState(false);
+    const [hovered, setHovered] = useState(false);
+    useCursor(hovered);
+    useEffect(() => {
+        const unsubPlayingNoteGroupNotesTimestamp = useGlobalStore.subscribe(
+            (state) => state.playingNoteGroupNotesTimestamp,
+            () => {
+                const timer = setTimeout(() => {
+                    setPlaying(true);
+                    const otherTimer = setTimeout(() => {
+                        setPlaying(false);
+                        clearTimeout(otherTimer);
+                    }, 100);
+                }, index * 100 + 100);
+                return () => clearTimeout(timer);
+            }
+        );
+        return () => {
+            unsubPlayingNoteGroupNotesTimestamp();
+        };
+    });
+    function handlePointerEvents({
+        pointerEventType,
+    }: {
+        pointerEventType: PointerEventTypes;
+    }) {
+        if (variant !== "show" || onClick === undefined) return;
+        if (pointerEventType === "over") {
+            setHovered(true);
+        } else if (pointerEventType === "out") {
+            setHovered(false);
+        }
+    }
+    return (
+        <>
+            <Instance
+                position={position}
+                scale={[2 * 0.95, 1.0 * 0.95, 0.01]}
+                onClick={onClick}
+                onPointerOver={() =>
+                    handlePointerEvents({ pointerEventType: "over" })
+                }
+                onPointerOut={() =>
+                    handlePointerEvents({ pointerEventType: "out" })
+                }
+                color={playing ? colors.lightText : colors.instrumentButtons}
+            />
+            <Text
+                position={[0, position[1], 0.01]}
+                scale={labelScale}
+                fontWeight={labelFontWeight}
+                textAlign={labelTextAlign}
+                anchorX={labelAnchorX}
+                anchorY={labelAnchorY}
+            >
+                {labelMotionMaterialElement}
+                {label}
+            </Text>
+        </>
+    );
+}
+
+interface NoteGroupEditDisplayProps {
+    displayPlaneArgs: [number, number];
+    sequencerHeight: number;
+}
+
+function NoteGroupEditDisplay({
+    displayPlaneArgs,
+    sequencerHeight,
+}: NoteGroupEditDisplayProps) {
     const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
         useGlobalStore.getState().currentNoteGroupIndex
     );
     const [currentNoteGroup, setCurrentNoteGroup] = useState(
         useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex]
     );
-    const octaveStart = useGlobalStore(
-        (state) => state.noteGroupCells[currentNoteGroupIndex].octaveStart
-    );
+    const [pendingNoteGroup, setPendingNoteGroup] = useState(currentNoteGroup);
     const [variant, setVariant] = useState<DisplayVariant>("hideFast");
     const [hovered, setHovered] = useState(false);
     useCursor(hovered);
 
     const octaveOptions: NoteOctave[] = [-2, -1, 0, 1, 2, 3, 4, 5, 6, 7];
+    const octaveIncrementOptions: number[] = [-2, -1, 0, 1, 2];
+    const [optionsStartIndex, setOptionsStartIndex] = useState(
+        octaveOptions.indexOf(pendingNoteGroup.octaveStart)
+    );
+    const [incrementStartIndex, setIncrementStartIndex] = useState(
+        octaveIncrementOptions.indexOf(pendingNoteGroup.octaveIncrement)
+    );
 
     const keysStartXPosition =
         -displayPlaneArgs[0] / 2 + 0.5 + (displayPlaneArgs[0] * 7) / (28 * 2);
     const whiteKeyWidth = displayPlaneArgs[0] / 28;
+
+    const synth = useGlobalStore((state) => state.synth);
 
     useEffect(() => {
         const unsubEditingNoteGroups = useGlobalStore.subscribe(
@@ -435,6 +639,21 @@ function NoteGroupEditDisplay({ displayPlaneArgs }: NoteGroupEditDisplayProps) {
                 setCurrentNoteGroup(
                     useGlobalStore.getState().noteGroupCells[value]
                 );
+                setPendingNoteGroup(
+                    useGlobalStore.getState().noteGroupCells[value]
+                );
+                setOptionsStartIndex(
+                    octaveOptions.indexOf(
+                        useGlobalStore.getState().noteGroupCells[value]
+                            .octaveStart
+                    )
+                );
+                setIncrementStartIndex(
+                    octaveIncrementOptions.indexOf(
+                        useGlobalStore.getState().noteGroupCells[value]
+                            .octaveIncrement
+                    )
+                );
             }
         );
         return () => {
@@ -455,6 +674,73 @@ function NoteGroupEditDisplay({ displayPlaneArgs }: NoteGroupEditDisplayProps) {
         }
     }
 
+    function updatePendingNoteGroup({
+        semitones,
+        octaveStart,
+        octaveIncrement,
+    }: {
+        semitones?: number[];
+        octaveStart?: NoteOctave;
+        octaveIncrement?: number;
+    }) {
+        const notes: NoteGroupNote[] = generateNoteGroupNotes(
+            useGlobalStore.getState().sequencerHeight,
+            "C",
+            semitones ?? pendingNoteGroup.semitones,
+            octaveStart ?? pendingNoteGroup.octaveStart,
+            octaveIncrement ?? pendingNoteGroup.octaveIncrement
+        );
+        const newNoteGroup = {
+            ...pendingNoteGroup,
+            semitones: semitones ?? pendingNoteGroup.semitones,
+            octaveStart: octaveStart ?? pendingNoteGroup.octaveStart,
+            octaveIncrement:
+                octaveIncrement ?? pendingNoteGroup.octaveIncrement,
+            notes,
+        };
+        setPendingNoteGroup(newNoteGroup);
+    }
+
+    const motionBasicWhiteMaterial = (
+        <motion.meshBasicMaterial
+            initial={"hidden"}
+            animate={variant}
+            variants={displayVariants}
+            color="white"
+            transparent
+            toneMapped={false}
+        />
+    );
+    const motionBasicBlackMaterial = (
+        <motion.meshBasicMaterial
+            initial={"hidden"}
+            animate={variant}
+            variants={displayVariants}
+            color="black"
+            transparent
+            toneMapped={false}
+        />
+    );
+    const motionBasicButtonMaterial = (
+        <motion.meshBasicMaterial
+            initial={"hidden"}
+            animate={variant}
+            variants={displayVariants}
+            color={colors.instrumentButtons}
+            transparent
+            toneMapped={false}
+        />
+    );
+    const motionBasicNoColorMaterial = (
+        <motion.meshBasicMaterial
+            initial={"hidden"}
+            animate={variant}
+            variants={displayVariants}
+            transparent
+            toneMapped={false}
+        />
+    );
+
     return (
         <>
             {/* "Editing Note Group: N" */}
@@ -463,13 +749,7 @@ function NoteGroupEditDisplay({ displayPlaneArgs }: NoteGroupEditDisplayProps) {
                     fontWeight={"bold"}
                     scale={2}
                 >
-                    <motion.meshBasicMaterial
-                        initial={"hidden"}
-                        animate={variant}
-                        variants={displayVariants}
-                        color="white"
-                        transparent
-                    />
+                    {motionBasicWhiteMaterial}
                     {`Editing Note Group: ${currentNoteGroupIndex + 1}`}
                 </Text>
             </group>
@@ -509,6 +789,9 @@ function NoteGroupEditDisplay({ displayPlaneArgs }: NoteGroupEditDisplayProps) {
                             index={i}
                             keysStartXPosition={keysStartXPosition}
                             whiteKeyWidth={whiteKeyWidth}
+                            synth={synth}
+                            pendingNoteGroup={pendingNoteGroup}
+                            updatePendingNoteGroup={updatePendingNoteGroup}
                         />
                     ))}
                 </Instances>
@@ -521,35 +804,124 @@ function NoteGroupEditDisplay({ displayPlaneArgs }: NoteGroupEditDisplayProps) {
                             0.1,
                         ]}
                         scale={0.5}
-                        color={"black"}
                         fontWeight={"bold"}
                     >
-                        <motion.meshBasicMaterial
-                            initial={"hidden"}
-                            animate={variant}
-                            variants={displayVariants}
-                            transparent
-                        />
-                        {`C${octaveStart + i}`}
+                        {motionBasicBlackMaterial}
+                        {`C${pendingNoteGroup.octaveStart + i - 1}`}
                     </Text>
                 ))}
             </group>
             {/* Buttons & selectors. */}
-            <group position={[0, -6, 0]}>
+            <group position={[0, -3, 0]}>
                 <ScreenArrowSelector
+                    position={[-3, 0, 0]}
                     options={octaveOptions}
-                    startingOptionIndex={octaveOptions.indexOf(octaveStart)}
+                    startingOptionIndex={optionsStartIndex}
                     onIndexChange={(index) => {
-                        useGlobalStore.setState((state) => {
-                            state.noteGroupCells[
-                                currentNoteGroupIndex
-                            ].octaveStart = octaveOptions[index];
+                        updatePendingNoteGroup({
+                            octaveStart: octaveOptions[index],
                         });
+                        setOptionsStartIndex(index);
                     }}
                     animate={variant}
                     variants={displayVariants}
                     label={"OCTAVE"}
                 />
+                <ScreenArrowSelector
+                    position={[3, 0, 0]}
+                    options={octaveIncrementOptions}
+                    startingOptionIndex={incrementStartIndex}
+                    onIndexChange={(index) => {
+                        updatePendingNoteGroup({
+                            octaveIncrement: octaveIncrementOptions[index],
+                        });
+                        setIncrementStartIndex(index);
+                    }}
+                    animate={variant}
+                    variants={displayVariants}
+                    label={"OCTAVE\nINCREMENT"}
+                />
+                <group position={[0, -5, 0]}>
+                    <mesh
+                        geometry={genericBoxGeometry}
+                        scale={[3, 1.5, 0.01]}
+                        position={[0, 0, 0]}
+                        onPointerOver={() =>
+                            handlePointerEvents({ pointerEventType: "over" })
+                        }
+                        onPointerOut={() =>
+                            handlePointerEvents({ pointerEventType: "out" })
+                        }
+                        onClick={() => {
+                            useGlobalStore.setState((state) => {
+                                state.noteGroupCells[currentNoteGroupIndex] =
+                                    pendingNoteGroup;
+                                state.editingNoteGroups = false;
+                                state.cellsIgnorePointerEvents = false;
+                            });
+                        }}
+                    >
+                        {motionBasicButtonMaterial}
+                    </mesh>
+                    <Text
+                        position={[0, 0, 0.1]}
+                        fontWeight={"bold"}
+                    >
+                        {motionBasicWhiteMaterial}
+                        {"SAVE"}
+                    </Text>
+                </group>
+            </group>
+            {/* Generated notes display & player */}
+            <Instances
+                limit={sequencerHeight}
+                position={[-keysStartXPosition + 2, 0, 0]}
+                geometry={genericBoxGeometry}
+            >
+                {motionBasicNoColorMaterial}
+                {pendingNoteGroup.notes.map((note, i) => (
+                    <NoteGroupEditNotesDisplay
+                        key={i}
+                        index={i}
+                        position={[0, i - sequencerHeight / 2, 0]}
+                        label={note.frequency.toNote()}
+                        labelScale={0.75}
+                        labelMotionMaterialElement={motionBasicWhiteMaterial}
+                        variant={variant}
+                    />
+                ))}
+            </Instances>
+            <group
+                position={[
+                    -keysStartXPosition + 2,
+                    -sequencerHeight / 2 - 2,
+                    0,
+                ]}
+            >
+                <Instances
+                    limit={1}
+                    geometry={genericBoxGeometry}
+                >
+                    {motionBasicButtonMaterial}
+                    <ScreenLabelOrButton
+                        label={"PLAY"}
+                        labelScale={1.5}
+                        labelMotionMaterialElement={motionBasicWhiteMaterial}
+                        variant={variant}
+                        onClick={() => {
+                            pendingNoteGroup.notes.forEach((note, i) => {
+                                synth?.triggerAttackRelease(
+                                    note.frequency.toFrequency(),
+                                    "16n",
+                                    `+${i * 0.1 + 0.1}`
+                                );
+                            });
+                            useGlobalStore.setState({
+                                playingNoteGroupNotesTimestamp: Date.now(),
+                            });
+                        }}
+                    />
+                </Instances>
             </group>
             {/* Corner "X" */}
             <group
@@ -574,14 +946,7 @@ function NoteGroupEditDisplay({ displayPlaneArgs }: NoteGroupEditDisplayProps) {
                         })
                     }
                 >
-                    <motion.meshBasicMaterial
-                        initial={"hidden"}
-                        animate={variant}
-                        variants={displayVariants}
-                        color="white"
-                        transparent
-                    />
-                    X
+                    {motionBasicWhiteMaterial}X
                 </Text>
             </group>
         </>
@@ -632,7 +997,10 @@ function Displays() {
                 />
             </mesh>
             <ValueChangeDisplay />
-            <NoteGroupEditDisplay displayPlaneArgs={displayPlaneArgs} />
+            <NoteGroupEditDisplay
+                displayPlaneArgs={displayPlaneArgs}
+                sequencerHeight={sequencerHeight}
+            />
         </group>
     );
 }
