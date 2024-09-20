@@ -1,30 +1,14 @@
-import { DragControls, Html, Instance, Instances } from "@react-three/drei";
+import { DragControls, Text } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import {
     buttonMaterial,
-    genericBoxGeometry,
     genericCircleGeometry,
     knobDotMaterial,
     knobGeometry,
 } from "../constants";
 import { useGlobalStore } from "../stores/useGlobalStore";
 import "./Controls.css";
-
-interface KnobTickProps {
-    position: [number, number, number];
-    rotation: [number, number, number];
-}
-
-function KnobTick({ position, rotation }: KnobTickProps) {
-    return (
-        <Instance
-            scale={[0.2, 0.1, 0.1]}
-            position={position}
-            rotation={rotation}
-        />
-    );
-}
 
 interface ValuesKnobProps {
     values: Array<number | string>;
@@ -53,9 +37,7 @@ export default function ValuesKnob({
         value;
     },
     label = "",
-    labelStyle = {},
     labelOptions = true,
-    labelOptionsStyle = {},
 }: ValuesKnobProps) {
     const knobRadius = 1;
     const ref = useRef<THREE.Group>(null!);
@@ -110,72 +92,69 @@ export default function ValuesKnob({
             position={position}
             scale={scale}
         >
-            <Instances
-                geometry={genericBoxGeometry}
-                material={buttonMaterial}
-            >
-                {Array.from({ length: ticks }).map((_, i) => {
-                    const angle = angleRangeValues[0] - i * snapFactor;
-                    const x = Math.cos(angle) * (knobRadius + 0.15);
-                    const y = Math.sin(angle) * (knobRadius + 0.15);
-                    return (
-                        <KnobTick
-                            key={i}
-                            position={[x, y, 0]}
-                            rotation={[0, 0, angle]}
-                        />
-                    );
-                })}
-            </Instances>
             {labelOptions && (
                 <>
                     {values.map((val, i) => {
                         return (
-                            <Html
+                            <Text
                                 key={i}
-                                transform
                                 position={[
                                     Math.cos(
                                         angleRangeValues[0] - i * snapFactor
-                                    ) *
-                                        (knobRadius + 0.5),
+                                    ) * knobRadius,
                                     Math.sin(
                                         angleRangeValues[0] - i * snapFactor
-                                    ) *
-                                        (knobRadius + 0.5),
+                                    ) * knobRadius,
                                     0,
                                 ]}
-                                distanceFactor={10}
-                                className="knob-options"
-                                style={labelOptionsStyle}
+                                fontWeight={"bold"}
+                                lineHeight={1}
+                                scale={0.35}
+                                color={"black"}
+                                textAlign={"center"}
+                                anchorY={
+                                    Math.sign(
+                                        Math.sin(
+                                            angleRangeValues[0] - i * snapFactor
+                                        )
+                                    ) > 0
+                                        ? "bottom"
+                                        : "top"
+                                }
+                                anchorX={
+                                    Math.abs(
+                                        Math.cos(
+                                            angleRangeValues[0] - i * snapFactor
+                                        )
+                                    ) < 0.01
+                                        ? "center"
+                                        : Math.sign(
+                                              Math.cos(
+                                                  angleRangeValues[0] -
+                                                      i * snapFactor
+                                              )
+                                          ) > 0
+                                        ? "left"
+                                        : "right"
+                                }
                             >
                                 {val}
-                            </Html>
+                            </Text>
                         );
                     })}
                 </>
             )}
-            <Html
-                transform
-                position={[0, -knobRadius - 0.25, 0]}
-                distanceFactor={10}
-                className="knob-label"
-                style={labelStyle}
+            <Text
+                position={[0, -knobRadius - 0.1, 0]}
+                fontWeight={"bold"}
+                lineHeight={1}
+                scale={0.35}
+                color={"black"}
+                textAlign={"center"}
+                anchorY={"top"}
             >
                 {label}
-            </Html>
-            {/* <Html
-                transform
-                distanceFactor={10}
-            >
-                <div
-                    onClick={() => handleOnClick()}
-                    className="knob-value"
-                    style={labelStyle}
-                >
-                    {values[index]}
-                </div>
-            </Html> */}
+            </Text>
             <DragControls
                 ref={ref}
                 dragLimits={[[0, 0], undefined, [0, 0]]}

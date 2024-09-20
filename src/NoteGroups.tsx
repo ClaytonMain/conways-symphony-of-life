@@ -6,8 +6,8 @@ import {
 } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useState } from "react";
-import { colors } from "./constants";
-import HtmlLabel from "./HtmlLabel";
+import { colors, genericBoxGeometry } from "./constants";
+import InstancedButtonOrLabel from "./controls/InstancedButtonOrLabel";
 import "./NoteGroups.css";
 import { PointerEventTypes, ShortcutEnum } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
@@ -27,8 +27,8 @@ function NoteGroupCellComponent({
 }: NoteGroupCellComponentProps) {
     const [subscribeKeys] = useKeyboardControls<ShortcutEnum>();
     const noteGroup = useGlobalStore((state) => state.noteGroupCells[index]);
-    const noteGroupEditMode = useGlobalStore(
-        (state) => state.noteGroupEditMode
+    const noteGroupSelectMode = useGlobalStore(
+        (state) => state.noteGroupSelectMode
     );
     const [active, setActive] = useState(noteGroup.active);
     const [enabled, setEnabled] = useState(noteGroup.enabled);
@@ -94,7 +94,7 @@ function NoteGroupCellComponent({
             if (pointerEventType === "over") {
                 setHovered(true);
             }
-            if (noteGroupEditMode === null) {
+            if (noteGroupSelectMode === null) {
                 if (primaryMouse) {
                     if (!active) {
                         useGlobalStore.setState((state) => {
@@ -108,8 +108,20 @@ function NoteGroupCellComponent({
                             !state.noteGroupCells[index].enabled;
                     });
                 }
-            } else {
-                // TODO: handle non-null cellEditMode
+            } else if (noteGroupSelectMode === "activate") {
+                if (primaryMouse) {
+                    useGlobalStore.setState((state) => {
+                        state.noteGroupCells[index].active = true;
+                        state.currentNoteGroupIndex = index;
+                    });
+                }
+            } else if (noteGroupSelectMode === "toggle") {
+                if (primaryMouse) {
+                    useGlobalStore.setState((state) => {
+                        state.noteGroupCells[index].enabled =
+                            !state.noteGroupCells[index].enabled;
+                    });
+                }
             }
         }
         if (pointerEventType === "out") {
@@ -147,64 +159,42 @@ function NoteGroupCellComponent({
     );
 }
 
-interface RowNoteLabelProps {
-    index: number;
-}
-
-function RowNoteLabel({ index }: RowNoteLabelProps) {
+export default function NoteGroups() {
+    const sequencerHeight = useGlobalStore((state) => state.sequencerHeight);
+    const noteGroupCells = useGlobalStore((state) => state.noteGroupCells);
     const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
         useGlobalStore.getState().currentNoteGroupIndex
     );
-    const [note, setNote] = useState(
-        useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex].notes[
-            index
-        ].note
+    const [notes, setNotes] = useState(
+        useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex].notes
     );
-
-    useEffect(() => {
-        const unsubNote = useGlobalStore.subscribe(
-            (state) =>
-                state.noteGroupCells[currentNoteGroupIndex].notes[index].note,
-            (value) => {
-                setNote(value);
-            }
-        );
-        return () => {
-            unsubNote();
-        };
-    });
+    const noteGroupCellHeight = useGlobalStore(
+        (state) => state.noteGroupCellHeight
+    );
+    const baseXOffset = useGlobalStore((state) => state.noteGroupCellXOffset);
 
     useEffect(() => {
         const unsubNoteGroupIndex = useGlobalStore.subscribe(
             (state) => state.currentNoteGroupIndex,
             (value) => {
                 setCurrentNoteGroupIndex(value);
-                setNote(
-                    useGlobalStore.getState().noteGroupCells[value].notes[index]
-                        .note
-                );
             }
         );
         return () => {
             unsubNoteGroupIndex();
         };
     });
-
-    return (
-        <HtmlLabel
-            position={[-1.5, index + 0.5, 0]}
-            label={note}
-        />
-    );
-}
-
-export default function NoteGroups() {
-    const sequencerHeight = useGlobalStore((state) => state.sequencerHeight);
-    const noteGroupCells = useGlobalStore((state) => state.noteGroupCells);
-    const noteGroupCellHeight = useGlobalStore(
-        (state) => state.noteGroupCellHeight
-    );
-    const baseXOffset = useGlobalStore((state) => state.noteGroupCellXOffset);
+    useEffect(() => {
+        const unsubNotes = useGlobalStore.subscribe(
+            (state) => state.noteGroupCells[currentNoteGroupIndex].notes,
+            (value) => {
+                setNotes(value);
+            }
+        );
+        return () => {
+            unsubNotes();
+        };
+    });
 
     return (
         <group position={[0, -0.5, 0]}>
@@ -225,14 +215,31 @@ export default function NoteGroups() {
                     );
                 })}
             </Instances>
-            {Array.from({ length: sequencerHeight }).map((_, i) => {
-                return (
-                    <RowNoteLabel
-                        key={i}
-                        index={i}
-                    />
-                );
-            })}
+            <Instances
+                limit={sequencerHeight}
+                geometry={genericBoxGeometry}
+            >
+                <meshBasicMaterial color={"darkred"} />
+                {notes.map((note, i) => {
+                    return (
+                        <InstancedButtonOrLabel
+                            key={i}
+                            scale={0.9}
+                            boxScale={[2, 1, 0.01]}
+                            labelScale={0.75}
+                            label={note.frequency.toNote()}
+                            position={[-1.5, i + 0.5, 0]}
+                            hoverCursor={false}
+                            labelMaterialElement={
+                                <meshBasicMaterial
+                                    color="white"
+                                    toneMapped={false}
+                                />
+                            }
+                        />
+                    );
+                })}
+            </Instances>
         </group>
     );
 }

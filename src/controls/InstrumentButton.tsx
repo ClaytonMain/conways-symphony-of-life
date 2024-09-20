@@ -6,7 +6,7 @@ import "./Controls.css";
 
 interface InstrumentButtonProps {
     position?: [number, number, number] | THREE.Vector3;
-    groupScale?: [number, number, number] | THREE.Vector3 | number;
+    scale?: [number, number, number] | THREE.Vector3 | number;
     buttonScale?: [number, number, number] | THREE.Vector3 | number;
     labelScale?: [number, number, number] | THREE.Vector3 | number;
     label?: string;
@@ -17,7 +17,7 @@ interface InstrumentButtonProps {
 
 export default function InstrumentButton({
     position = [0, 0, 0],
-    groupScale = 1,
+    scale = 1,
     buttonScale = 1,
     labelScale = 1,
     label = "",
@@ -30,7 +30,7 @@ export default function InstrumentButton({
     return (
         <group
             position={position}
-            scale={groupScale}
+            scale={scale}
             onClick={onClick}
             onPointerOver={() => setHovered(true)}
             onPointerOut={() => setHovered(false)}

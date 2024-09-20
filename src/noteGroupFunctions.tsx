@@ -54,26 +54,26 @@ interface NoteGroupGenerationParameters {
 
 const initialNoteGroupGenerationParameters: NoteGroupGenerationParameters[] = [
     {
-        root: "A#",
-        semitones: [0, 3, 7, 10, 15, 20],
-        octaveStart: 2,
-        octaveIncrement: 1,
-    },
-    {
-        root: "B",
-        semitones: [0, 4, 7, 14, 16, 19],
-        octaveStart: 2,
-        octaveIncrement: 1,
-    },
-    {
-        root: "C#",
-        semitones: [0, 4, 7, 12, 16, 17],
+        root: "C",
+        semitones: [-2, 1, 5, 8, 13, 18],
         octaveStart: 3,
         octaveIncrement: 1,
     },
     {
-        root: "D#",
-        semitones: [0, 3, 7, 12, 14, 17],
+        root: "C",
+        semitones: [-1, 3, 6, 13, 15, 18],
+        octaveStart: 3,
+        octaveIncrement: 1,
+    },
+    {
+        root: "C",
+        semitones: [1, 5, 8, 13, 17, 18],
+        octaveStart: 3,
+        octaveIncrement: 1,
+    },
+    {
+        root: "C",
+        semitones: [3, 6, 10, 15, 17, 20],
         octaveStart: 3,
         octaveIncrement: 1,
     },

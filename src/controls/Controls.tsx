@@ -21,6 +21,7 @@ import { generateNoteGroupNotes } from "../noteGroupFunctions";
 import {
     NoteAccidental,
     NoteGroupChangeMode,
+    noteGroupSelectMode,
     NoteName,
     NoteOctave,
     PointerEventTypes,
@@ -217,6 +218,9 @@ function NoteGroupsControls({
     const noteGroupChangeMode = useGlobalStore(
         (state) => state.noteGroupChangeMode
     );
+    const noteGroupSelectMode = useGlobalStore(
+        (state) => state.noteGroupSelectMode
+    );
     const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
         useGlobalStore.getState().currentNoteGroupIndex
     );
@@ -287,6 +291,14 @@ function NoteGroupsControls({
         });
     }
 
+    const groupSelectModeDisplayOptions = ["TGGL", "ACTV", "KBM"];
+    const groupSelectModeDisplayLabels = ["TOGGLE", "ACTIVATE", "KBM"];
+    const groupSelectModeOptions: noteGroupSelectMode[] = [
+        "toggle",
+        "activate",
+        null,
+    ];
+
     const groupChangeDisplayOptions = ["SEQ", "RND", "SRND", "OFF"];
     const groupChangeDisplayLabels = [
         "SEQUENTIAL",
@@ -300,6 +312,7 @@ function NoteGroupsControls({
         "avoid prev random",
         null,
     ];
+
     function handleGroupChangeModeChange(value: string | number) {
         const index = groupChangeDisplayOptions.indexOf(value as string);
         useGlobalStore.setState((state) => {
@@ -309,16 +322,25 @@ function NoteGroupsControls({
         });
     }
 
+    function handleGroupSelectModeChange(value: string | number) {
+        const index = groupSelectModeDisplayOptions.indexOf(value as string);
+        useGlobalStore.setState((state) => {
+            state.noteGroupSelectMode = groupSelectModeOptions[index];
+            state.displayLabel = "Group Select Mode";
+            state.displayValue = groupSelectModeDisplayLabels[index];
+        });
+    }
+
     return (
         <group
             position={[
                 -baseXOffset - noteGroupCellHeight * 2,
-                sequencerHeight - 0.5,
+                sequencerHeight,
                 0,
             ]}
         >
             <mesh>
-                <planeGeometry args={[9, 1.25]} />
+                <planeGeometry args={[10, 1.25]} />
                 <meshBasicMaterial
                     color={"black"}
                     transparent
@@ -336,10 +358,19 @@ function NoteGroupsControls({
                 NOTE GROUPS
             </Text>
             <ValuesKnob
+                position={[-3.5, -2.5, 0]}
+                values={groupSelectModeDisplayOptions}
+                startIndex={groupSelectModeOptions.indexOf(noteGroupSelectMode)}
+                label={"NOTE GROUP\nSELECT MODE"}
+                onChange={(value) => {
+                    handleGroupSelectModeChange(value);
+                }}
+            />
+            <ValuesKnob
                 position={[0, -2.5, 0]}
                 values={groupChangeDisplayOptions}
                 startIndex={groupChangeModeOptions.indexOf(noteGroupChangeMode)}
-                label="GRP CHNG MODE"
+                label={"GROUP\nCHANGE\nMODE"}
                 onChange={(value) => {
                     handleGroupChangeModeChange(value);
                 }}

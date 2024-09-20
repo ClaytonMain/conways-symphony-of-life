@@ -7,16 +7,18 @@ import {
     useTexture,
 } from "@react-three/drei";
 import { useFrame } from "@react-three/fiber";
-import { motion, useTime } from "framer-motion-3d";
+import { motion } from "framer-motion-3d";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import * as Tone from "tone";
 import { colors, genericBoxGeometry } from "../constants";
+import InstancedButtonOrLabel from "../controls/InstancedButtonOrLabel";
 import DrumSequencer from "../DrumSequencer";
 import { generateNoteGroupNotes } from "../noteGroupFunctions";
 import NoteGroups from "../NoteGroups";
 import Sequencer from "../Sequencer";
 import {
+    DisplayVariant,
     NoteGroupCell,
     NoteGroupNote,
     NoteOctave,
@@ -24,7 +26,6 @@ import {
 } from "../sharedTypes";
 import { useGlobalStore } from "../stores/useGlobalStore";
 
-type DisplayVariant = "show" | "hideSlow" | "hideFast";
 interface DisplayVariantObject {
     opacity?: number;
     transition?: {
@@ -387,79 +388,6 @@ function ScreenArrowSelector({
     );
 }
 
-interface ScreenLabelOrButtonProps {
-    position?: [number, number, number];
-    label?: string;
-    labelScale?: [number, number, number] | number | THREE.Vector3;
-    labelMotionMaterialElement?: JSX.Element;
-    labelFontWeight?: "bold" | "normal";
-    labelTextAlign?: "center" | "left" | "right";
-    labelAnchorX?: "center" | "left" | "right";
-    labelAnchorY?:
-        | number
-        | "top"
-        | "bottom"
-        | "middle"
-        | "top-baseline"
-        | "bottom-baseline";
-    onClick?: () => void;
-    variant?: DisplayVariant;
-}
-
-function ScreenLabelOrButton({
-    position = [0, 0, 0],
-    label,
-    labelScale = 1,
-    labelMotionMaterialElement,
-    labelFontWeight = "bold",
-    labelTextAlign = "center",
-    labelAnchorX,
-    labelAnchorY,
-    onClick,
-    variant,
-}: ScreenLabelOrButtonProps) {
-    const [hovered, setHovered] = useState(false);
-    useCursor(hovered);
-    function handlePointerEvents({
-        pointerEventType,
-    }: {
-        pointerEventType: PointerEventTypes;
-    }) {
-        if (variant !== "show" || onClick === undefined) return;
-        if (pointerEventType === "over") {
-            setHovered(true);
-        } else if (pointerEventType === "out") {
-            setHovered(false);
-        }
-    }
-    return (
-        <>
-            <Instance
-                position={position}
-                scale={[2 * 0.95, 1.0 * 0.95, 0.01]}
-                onClick={onClick}
-                onPointerOver={() =>
-                    handlePointerEvents({ pointerEventType: "over" })
-                }
-                onPointerOut={() =>
-                    handlePointerEvents({ pointerEventType: "out" })
-                }
-            />
-            <Text
-                position={[0, position[1], 0.01]}
-                scale={labelScale}
-                fontWeight={labelFontWeight}
-                textAlign={labelTextAlign}
-                anchorX={labelAnchorX}
-                anchorY={labelAnchorY}
-            >
-                {labelMotionMaterialElement}
-                {label}
-            </Text>
-        </>
-    );
-}
-
 interface NoteGroupEditNotesDisplayProps {
     index: number;
     position?: [number, number, number];
@@ -538,7 +466,7 @@ function NoteGroupEditNotesDisplay({
                 onPointerOut={() =>
                     handlePointerEvents({ pointerEventType: "out" })
                 }
-                color={playing ? colors.lightText : colors.instrumentButtons}
+                color={playing ? colors.lightText : colors.enabledDiatonic}
             />
             <Text
                 position={[0, position[1], 0.01]}
@@ -891,38 +819,36 @@ function NoteGroupEditDisplay({
                     />
                 ))}
             </Instances>
-            <group
+            <Instances
                 position={[
                     -keysStartXPosition + 2,
-                    -sequencerHeight / 2 - 2,
+                    -sequencerHeight / 2 - 1.5,
                     0,
                 ]}
+                limit={1}
+                geometry={genericBoxGeometry}
             >
-                <Instances
-                    limit={1}
-                    geometry={genericBoxGeometry}
-                >
-                    {motionBasicButtonMaterial}
-                    <ScreenLabelOrButton
-                        label={"PLAY"}
-                        labelScale={1.5}
-                        labelMotionMaterialElement={motionBasicWhiteMaterial}
-                        variant={variant}
-                        onClick={() => {
-                            pendingNoteGroup.notes.forEach((note, i) => {
-                                synth?.triggerAttackRelease(
-                                    note.frequency.toFrequency(),
-                                    "16n",
-                                    `+${i * 0.1 + 0.1}`
-                                );
-                            });
-                            useGlobalStore.setState({
-                                playingNoteGroupNotesTimestamp: Date.now(),
-                            });
-                        }}
-                    />
-                </Instances>
-            </group>
+                {motionBasicButtonMaterial}
+                <InstancedButtonOrLabel
+                    boxScale={[3.75, 1.25, 0.01]}
+                    label={"PREVIEW"}
+                    labelScale={0.75}
+                    labelMaterialElement={motionBasicWhiteMaterial}
+                    variant={variant}
+                    onClick={() => {
+                        pendingNoteGroup.notes.forEach((note, i) => {
+                            synth?.triggerAttackRelease(
+                                note.frequency.toFrequency(),
+                                "16n",
+                                `+${i * 0.1 + 0.1}`
+                            );
+                        });
+                        useGlobalStore.setState({
+                            playingNoteGroupNotesTimestamp: Date.now(),
+                        });
+                    }}
+                />
+            </Instances>
             {/* Corner "X" */}
             <group
                 position={[

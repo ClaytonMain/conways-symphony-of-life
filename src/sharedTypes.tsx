@@ -87,7 +87,7 @@ export type NoteGroupChangeMode =
     | "true random"
     | "avoid prev random"
     | null;
-export type NoteGroupEditMode = "toggle" | "activate" | null;
+export type noteGroupSelectMode = "toggle" | "activate" | null;
 export type PointerEventTypes = "down" | "over" | "out";
 export type DrumEditMode = "alive" | "dead" | null;
 export type RoundedBoxProps = {
@@ -100,6 +100,7 @@ export type RoundedBoxProps = {
     steps?: number;
     creaseAngle?: number;
 };
+export type DisplayVariant = "show" | "hideSlow" | "hideFast";
 
 // Old code below:
 export interface CellRecord {
