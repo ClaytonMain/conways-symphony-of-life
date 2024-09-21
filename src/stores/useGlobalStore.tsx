@@ -17,7 +17,7 @@ import {
     GameWrapMode,
     NoteGroupCell,
     NoteGroupChangeMode,
-    noteGroupSelectMode,
+    NoteGroupSelectMode,
     PlayStateType,
     SequencerCell,
     VoiceMode,
@@ -56,7 +56,7 @@ interface GlobalStoreTypes {
     drumDuration: number;
     cellsIgnorePointerEvents: boolean;
     cellEditMode: CellEditMode;
-    noteGroupSelectMode: noteGroupSelectMode;
+    noteGroupSelectMode: NoteGroupSelectMode;
     drumEditMode: DrumEditMode;
     pivotControlsEnabled: boolean;
     startingCells: Record<number, SequencerCell>;
@@ -82,7 +82,7 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             sequencerLength: initialSequencerLength,
             sequencerHeight: initialSequencerHeight,
             npm: initialNpm,
-            npt: 1,
+            npt: 4,
             npg: 4,
             currentSequencerIndex: null,
             gameWrapMode: initialGameWrapMode,
@@ -104,7 +104,7 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             voiceMode: "poly",
             waveform: "sine",
             synthVolume: -10,
-            drumsVolume: -6,
+            drumsVolume: -7,
             attack: 0.005,
             decay: 0.1,
             sustain: 0.3,

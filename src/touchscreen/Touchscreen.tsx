@@ -61,7 +61,6 @@ const overlayVariants: DisplayVariants = {
     },
 };
 
-// interface ValueChangeDisplayProps {}
 function ValueChangeDisplay() {
     const [variant, setVariant] = useState<DisplayVariant>("hideFast");
     const [displayValue, setDisplayValue] = useState(
@@ -109,7 +108,7 @@ function ValueChangeDisplay() {
     useFrame((_, delta) => {
         displayDurationRef.current += delta;
         if (displayDurationRef.current > 1) {
-            if (variant === "show") {
+            if (variant !== "hideSlow") {
                 setVariant("hideSlow");
             }
             if (showValueChangeDisplay) {
@@ -124,6 +123,7 @@ function ValueChangeDisplay() {
             <Text
                 position={[0, 3, 0]}
                 fontWeight={"bold"}
+                anchorY={"bottom"}
             >
                 <motion.meshBasicMaterial
                     initial={"hidden"}
@@ -132,13 +132,17 @@ function ValueChangeDisplay() {
                     color="white"
                     transparent
                     opacity={0.0}
+                    toneMapped={false}
                 />
                 {displayLabel}
             </Text>
             <Text
-                position={[0, 0, 0]}
+                position={[0, 3, 0]}
                 scale={4}
                 fontWeight={"bold"}
+                maxWidth={8}
+                textAlign={"center"}
+                anchorY={"top"}
             >
                 <motion.meshBasicMaterial
                     initial={"hidden"}
@@ -147,6 +151,7 @@ function ValueChangeDisplay() {
                     color="white"
                     transparent
                     opacity={0.0}
+                    toneMapped={false}
                 />
                 {displayValue}
             </Text>
@@ -172,6 +177,7 @@ interface PianoKeyProps {
         | null;
     pendingNoteGroup: NoteGroupCell;
     updatePendingNoteGroup: (params: UpdatePendingNoteGroupParams) => void;
+    variant?: DisplayVariant;
 }
 
 function PianoKey({
@@ -181,6 +187,7 @@ function PianoKey({
     synth,
     pendingNoteGroup,
     updatePendingNoteGroup,
+    variant,
 }: PianoKeyProps) {
     const relativeSemitone = index - 12;
     const enabled = pendingNoteGroup.semitones.includes(relativeSemitone);
@@ -188,6 +195,7 @@ function PianoKey({
     const keyIndex = keyOffsets[index % 12] + Math.floor(index / 12) * 7;
 
     function handleOnClick() {
+        if (variant !== "show") return;
         const activeSemitones = pendingNoteGroup.semitones;
         const octaveStart = pendingNoteGroup.octaveStart;
         let newSemitones: number[] = [];
@@ -278,6 +286,7 @@ function ScreenArrowSelector({
     }, [startingOptionIndex]);
 
     function handleOnClick(increment: -1 | 1) {
+        if (animate !== "show") return;
         const newIndex =
             (currentOptionIndex + increment + options.length) % options.length;
         setCurrentOptionIndex(newIndex);
@@ -720,6 +729,7 @@ function NoteGroupEditDisplay({
                             synth={synth}
                             pendingNoteGroup={pendingNoteGroup}
                             updatePendingNoteGroup={updatePendingNoteGroup}
+                            variant={variant}
                         />
                     ))}
                 </Instances>
@@ -781,6 +791,7 @@ function NoteGroupEditDisplay({
                             handlePointerEvents({ pointerEventType: "out" })
                         }
                         onClick={() => {
+                            if (variant !== "show") return;
                             useGlobalStore.setState((state) => {
                                 state.noteGroupCells[currentNoteGroupIndex] =
                                     pendingNoteGroup;
@@ -836,6 +847,7 @@ function NoteGroupEditDisplay({
                     labelMaterialElement={motionBasicWhiteMaterial}
                     variant={variant}
                     onClick={() => {
+                        if (variant !== "show") return;
                         pendingNoteGroup.notes.forEach((note, i) => {
                             synth?.triggerAttackRelease(
                                 note.frequency.toFrequency(),

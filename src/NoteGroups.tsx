@@ -178,6 +178,7 @@ export default function NoteGroups() {
             (state) => state.currentNoteGroupIndex,
             (value) => {
                 setCurrentNoteGroupIndex(value);
+                setNotes(useGlobalStore.getState().noteGroupCells[value].notes);
             }
         );
         return () => {

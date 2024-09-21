@@ -61,6 +61,7 @@ const latheGeometryPoints = [
 export const knobGeometry = new THREE.LatheGeometry(latheGeometryPoints, 13);
 export const buttonMaterial = new THREE.MeshStandardMaterial({
     color: colors.instrumentButtons,
+    toneMapped: false,
 });
 export const genericCircleGeometry = new THREE.CircleGeometry(0.5, 16);
 export const knobDotMaterial = new THREE.MeshBasicMaterial({
@@ -70,7 +71,7 @@ export const arrowGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.5, 3);
 export const arrowMaterial = new THREE.MeshBasicMaterial({
     color: colors.highlight1,
 });
-
 export const buttonLabelElementMaterial = new THREE.MeshBasicMaterial({
     color: colors.lightText,
 });
+export const genericPlaneGeometry = new THREE.PlaneGeometry(1, 1);

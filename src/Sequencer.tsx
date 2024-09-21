@@ -74,7 +74,7 @@ function SequencerCell({ index }: SequencerCellProps) {
         const unsubPlayState = useGlobalStore.subscribe(
             (state) => state.playState,
             (value) => {
-                if (value === "stopped" && sequenceColumnActive) {
+                if (value === "stopped") {
                     setSequenceColumnActive(false);
                 }
             }
@@ -117,8 +117,24 @@ function SequencerCell({ index }: SequencerCellProps) {
                         state.sequencerCells[index].state = "dead";
                     });
                 }
-            } else {
-                // TODO: handle non-null cellEditMode
+            } else if (cellEditMode === "alive") {
+                if (primaryMouse) {
+                    useGlobalStore.setState((state) => {
+                        state.sequencerCells[index].state = "alive";
+                    });
+                }
+            } else if (cellEditMode === "dead") {
+                if (primaryMouse) {
+                    useGlobalStore.setState((state) => {
+                        state.sequencerCells[index].state = "dead";
+                    });
+                }
+            } else if (cellEditMode === "invincible") {
+                if (primaryMouse) {
+                    useGlobalStore.setState((state) => {
+                        state.sequencerCells[index].state = "invincible";
+                    });
+                }
             }
         }
         if (pointerEventType === "out") {

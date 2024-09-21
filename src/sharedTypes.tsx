@@ -87,7 +87,7 @@ export type NoteGroupChangeMode =
     | "true random"
     | "avoid prev random"
     | null;
-export type noteGroupSelectMode = "toggle" | "activate" | null;
+export type NoteGroupSelectMode = "toggle" | "activate" | null;
 export type PointerEventTypes = "down" | "over" | "out";
 export type DrumEditMode = "alive" | "dead" | null;
 export type RoundedBoxProps = {

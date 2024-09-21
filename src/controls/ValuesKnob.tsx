@@ -16,8 +16,8 @@ interface ValuesKnobProps {
     position?: [number, number, number];
     scale?: number;
     angleRangeValues?: [number, number];
-    onChange?: (value: number | string) => void;
-    onDragEnd?: (value: number | string) => void;
+    onChange?: (index: number) => void;
+    onDragEnd?: (index: number) => void;
     label?: string;
     labelStyle?: React.CSSProperties;
     labelOptions?: boolean;
@@ -30,12 +30,8 @@ export default function ValuesKnob({
     position = [0, 0, 0],
     scale = 1,
     angleRangeValues = [(7 * Math.PI) / 6, -Math.PI / 6],
-    onChange = (value: number | string) => {
-        value;
-    },
-    onDragEnd = (value: number | string) => {
-        value;
-    },
+    onChange,
+    onDragEnd,
     label = "",
     labelOptions = true,
 }: ValuesKnobProps) {
@@ -64,7 +60,7 @@ export default function ValuesKnob({
         setIndex(newIndex);
         ref.current.rotation.z = rotationAngle;
         ref.current.updateMatrix();
-        onChange(values[newIndex]);
+        if (onChange) onChange(newIndex);
     }
 
     function handleOnClick() {
@@ -76,7 +72,7 @@ export default function ValuesKnob({
         setIndex(newIndex);
         ref.current.rotation.z = rotationAngle;
         ref.current.updateMatrix();
-        onChange(values[newIndex]);
+        if (onChange) onChange(newIndex);
     }
 
     useEffect(() => {
@@ -173,7 +169,7 @@ export default function ValuesKnob({
                     useGlobalStore.setState({
                         cellsIgnorePointerEvents: false,
                     });
-                    onDragEnd(values[index]);
+                    if (onDragEnd) onDragEnd(index);
                 }}
             >
                 <group onClick={handleOnClick}>

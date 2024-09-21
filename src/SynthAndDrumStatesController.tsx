@@ -8,7 +8,7 @@ export default function SynthAndDrumStatesController() {
     const [synth, setSynth] = useState<Tone.PolySynth | Tone.MonoSynth | null>(
         useGlobalStore.getState().synth
     );
-    const [, setDrumSampler] = useState<Tone.Sampler | null>(
+    const [drumSampler, setDrumSampler] = useState<Tone.Sampler | null>(
         useGlobalStore.getState().drumSampler
     );
     const [, setEqualizer] = useState<Tone.EQ3 | null>(
@@ -72,6 +72,11 @@ export default function SynthAndDrumStatesController() {
             },
         });
     }, [waveform, synthVolume, attack, decay, sustain, release, synth]);
+
+    useEffect(() => {
+        if (!drumSampler) return;
+        drumSampler.set({ volume: drumsVolume });
+    }, [drumsVolume, drumSampler]);
 
     useEffect(() => {
         if (!userHasClicked) return;
