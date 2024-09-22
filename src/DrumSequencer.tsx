@@ -1,27 +1,30 @@
 import { Instance, Instances, useCursor } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useState } from "react";
-import { colors, drumTypes, sequencerCellScale } from "./constants";
-import HtmlLabel from "./HtmlLabel";
-import { PointerEventTypes } from "./sharedTypes";
+import {
+    colors,
+    drumTypes,
+    genericBoxGeometry,
+    sequencerCellScale,
+    staticLabelMaterialElement,
+} from "./constants";
+import InstancedButtonOrLabel from "./controls/InstancedButtonOrLabel";
+import { CellEditMode, PointerEventTypes } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
 
 interface DrumCellProps {
     x: number;
     y: number;
+    cellEditMode: CellEditMode;
 }
 
-function DrumCell({ x, y }: DrumCellProps) {
-    const drumCellRecord = useGlobalStore((state) => state.drumCells[x][y]);
-    const drumEditMode = useGlobalStore((state) => state.drumEditMode);
-    const [alive, setAlive] = useState(drumCellRecord.alive);
+function DrumCell({ x, y, cellEditMode }: DrumCellProps) {
+    const [alive, setAlive] = useState(
+        useGlobalStore.getState().drumCells[x][y].alive
+    );
     const [sequenceColumnActive, setSequenceColumnActive] = useState(false);
     const [playing, setPlaying] = useState(false);
     const [hovered, setHovered] = useState(false);
-    // const [sequenceRowActive, setSequenceRowActive] = useState(false);
-    // const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
-    //     useGlobalStore.getState().currentNoteGroupIndex
-    // );
     useCursor(hovered);
 
     useEffect(() => {
@@ -84,7 +87,7 @@ function DrumCell({ x, y }: DrumCellProps) {
             if (pointerEventType === "over") {
                 setHovered(true);
             }
-            if (drumEditMode === null) {
+            if (cellEditMode === null) {
                 if (primaryMouse && !alive) {
                     useGlobalStore.setState((state) => {
                         state.drumCells[x][y].alive = true;
@@ -94,8 +97,21 @@ function DrumCell({ x, y }: DrumCellProps) {
                         state.drumCells[x][y].alive = false;
                     });
                 }
-            } else {
-                // TODO: handle non-null cellEditMode
+            } else if (
+                cellEditMode === "alive" ||
+                cellEditMode === "invincible"
+            ) {
+                if (!alive) {
+                    useGlobalStore.setState((state) => {
+                        state.drumCells[x][y].alive = true;
+                    });
+                }
+            } else if (cellEditMode === "dead") {
+                if (alive) {
+                    useGlobalStore.setState((state) => {
+                        state.drumCells[x][y].alive = false;
+                    });
+                }
             }
         }
         if (pointerEventType === "out") {
@@ -130,8 +146,49 @@ function DrumCell({ x, y }: DrumCellProps) {
 }
 
 export default function DrumSequencer() {
-    const sequencerLength = useGlobalStore((state) => state.sequencerLength);
-    const drumCells = useGlobalStore((state) => state.drumCells);
+    const [sequencerLength, setSequencerLength] = useState(
+        useGlobalStore.getState().sequencerLength
+    );
+    const [cellEditMode, setCellEditMode] = useState(
+        useGlobalStore.getState().cellEditMode
+    );
+    const [drumCells, setDrumCells] = useState(
+        useGlobalStore.getState().drumCells
+    );
+
+    useEffect(() => {
+        const unsubSequencerLength = useGlobalStore.subscribe(
+            (state) => state.sequencerLength,
+            (value) => {
+                setSequencerLength(value);
+            }
+        );
+        return () => {
+            unsubSequencerLength();
+        };
+    });
+    useEffect(() => {
+        const unsubCellEditMode = useGlobalStore.subscribe(
+            (state) => state.cellEditMode,
+            (value) => {
+                setCellEditMode(value);
+            }
+        );
+        return () => {
+            unsubCellEditMode();
+        };
+    });
+    useEffect(() => {
+        const unsubDrumCells = useGlobalStore.subscribe(
+            (state) => state.drumCells,
+            (value) => {
+                setDrumCells(value);
+            }
+        );
+        return () => {
+            unsubDrumCells();
+        };
+    });
 
     return (
         <group>
@@ -144,20 +201,29 @@ export default function DrumSequencer() {
                             key={`${x},${y}`}
                             x={x}
                             y={y}
+                            cellEditMode={cellEditMode}
                         />
                     ))
                 )}
             </Instances>
-            {drumTypes.map((drumType, index) => (
-                <HtmlLabel
-                    key={index}
-                    position={[-1.5, -index - 2, 0]}
-                    label={drumType}
-                    styleUpdate={{
-                        fontSize: "1rem",
-                    }}
-                />
-            ))}
+            <Instances
+                limit={drumTypes.length}
+                geometry={genericBoxGeometry}
+            >
+                <meshBasicMaterial color={"darkred"} />
+                {drumTypes.map((drumType, i) => (
+                    <InstancedButtonOrLabel
+                        key={i}
+                        scale={0.9}
+                        boxScale={[2, 1, 0.01]}
+                        labelScale={0.55}
+                        label={drumType}
+                        position={[-1.5, -i - 2, 0]}
+                        hoverCursor={false}
+                        labelMaterialElement={staticLabelMaterialElement}
+                    />
+                ))}
+            </Instances>
         </group>
     );
 }

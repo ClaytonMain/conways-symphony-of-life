@@ -6,7 +6,11 @@ import {
 } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useState } from "react";
-import { colors, genericBoxGeometry } from "./constants";
+import {
+    colors,
+    genericBoxGeometry,
+    staticLabelMaterialElement,
+} from "./constants";
 import InstancedButtonOrLabel from "./controls/InstancedButtonOrLabel";
 import "./NoteGroups.css";
 import { PointerEventTypes, ShortcutEnum } from "./sharedTypes";
@@ -26,27 +30,40 @@ function NoteGroupCellComponent({
     baseXOffset = 0,
 }: NoteGroupCellComponentProps) {
     const [subscribeKeys] = useKeyboardControls<ShortcutEnum>();
-    const noteGroup = useGlobalStore((state) => state.noteGroupCells[index]);
-    const noteGroupSelectMode = useGlobalStore(
-        (state) => state.noteGroupSelectMode
+    const [noteGroupSelectMode, setNoteGroupSelectMode] = useState(
+        useGlobalStore.getState().noteGroupSelectMode
     );
-    const [active, setActive] = useState(noteGroup.active);
-    const [enabled, setEnabled] = useState(noteGroup.enabled);
+    const [active, setActive] = useState(
+        useGlobalStore.getState().noteGroupCells[index].active
+    );
+    const [enabled, setEnabled] = useState(
+        useGlobalStore.getState().noteGroupCells[index].enabled
+    );
     const [hovered, setHovered] = useState(false);
     useCursor(hovered);
 
     useEffect(() => {
-        const unsubActiveIndex = useGlobalStore.subscribe(
+        const unsubNoteGroupSelectMode = useGlobalStore.subscribe(
+            (state) => state.noteGroupSelectMode,
+            (value) => {
+                setNoteGroupSelectMode(value);
+            }
+        );
+        return () => {
+            unsubNoteGroupSelectMode();
+        };
+    });
+    useEffect(() => {
+        const unsubNoteGroupIndex = useGlobalStore.subscribe(
             (state) => state.currentNoteGroupIndex,
             (value) => {
                 setActive(value === index);
             }
         );
         return () => {
-            unsubActiveIndex();
+            unsubNoteGroupIndex();
         };
     });
-
     useEffect(() => {
         const unsubEnabled = useGlobalStore.subscribe(
             (state) => state.noteGroupCells[index].enabled,
@@ -58,7 +75,6 @@ function NoteGroupCellComponent({
             unsubEnabled();
         };
     });
-
     useEffect(() => {
         const unsubscribeKey = subscribeKeys(
             (state) => state[`key${(index + 1) % 10}` as ShortcutEnum],
@@ -160,19 +176,47 @@ function NoteGroupCellComponent({
 }
 
 export default function NoteGroups() {
-    const sequencerHeight = useGlobalStore((state) => state.sequencerHeight);
-    const noteGroupCells = useGlobalStore((state) => state.noteGroupCells);
+    const [sequencerHeight, setSequencerHeight] = useState(
+        useGlobalStore.getState().sequencerHeight
+    );
+    const [noteGroupCells, setNoteGroupCells] = useState(
+        useGlobalStore.getState().noteGroupCells
+    );
     const [currentNoteGroupIndex, setCurrentNoteGroupIndex] = useState(
         useGlobalStore.getState().currentNoteGroupIndex
     );
     const [notes, setNotes] = useState(
         useGlobalStore.getState().noteGroupCells[currentNoteGroupIndex].notes
     );
-    const noteGroupCellHeight = useGlobalStore(
-        (state) => state.noteGroupCellHeight
+    const [noteGroupCellHeight, setNoteGroupCellHeight] = useState(
+        useGlobalStore.getState().noteGroupCellHeight
     );
-    const baseXOffset = useGlobalStore((state) => state.noteGroupCellXOffset);
+    const [baseXOffset, setBaseXOffset] = useState(
+        useGlobalStore.getState().noteGroupCellXOffset
+    );
 
+    useEffect(() => {
+        const unsubSequencerHeight = useGlobalStore.subscribe(
+            (state) => state.sequencerHeight,
+            (value) => {
+                setSequencerHeight(value);
+            }
+        );
+        return () => {
+            unsubSequencerHeight();
+        };
+    });
+    useEffect(() => {
+        const unsubNoteGroupCells = useGlobalStore.subscribe(
+            (state) => state.noteGroupCells,
+            (value) => {
+                setNoteGroupCells(value);
+            }
+        );
+        return () => {
+            unsubNoteGroupCells();
+        };
+    });
     useEffect(() => {
         const unsubNoteGroupIndex = useGlobalStore.subscribe(
             (state) => state.currentNoteGroupIndex,
@@ -194,6 +238,28 @@ export default function NoteGroups() {
         );
         return () => {
             unsubNotes();
+        };
+    });
+    useEffect(() => {
+        const unsubNoteGroupCellHeight = useGlobalStore.subscribe(
+            (state) => state.noteGroupCellHeight,
+            (value) => {
+                setNoteGroupCellHeight(value);
+            }
+        );
+        return () => {
+            unsubNoteGroupCellHeight();
+        };
+    });
+    useEffect(() => {
+        const unsubNoteGroupCellXOffset = useGlobalStore.subscribe(
+            (state) => state.noteGroupCellXOffset,
+            (value) => {
+                setBaseXOffset(value);
+            }
+        );
+        return () => {
+            unsubNoteGroupCellXOffset();
         };
     });
 
@@ -231,12 +297,7 @@ export default function NoteGroups() {
                             label={note.frequency.toNote()}
                             position={[-1.5, i + 0.5, 0]}
                             hoverCursor={false}
-                            labelMaterialElement={
-                                <meshBasicMaterial
-                                    color="white"
-                                    toneMapped={false}
-                                />
-                            }
+                            labelMaterialElement={staticLabelMaterialElement}
                         />
                     );
                 })}

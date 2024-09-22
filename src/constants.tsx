@@ -75,3 +75,9 @@ export const buttonLabelElementMaterial = new THREE.MeshBasicMaterial({
     color: colors.lightText,
 });
 export const genericPlaneGeometry = new THREE.PlaneGeometry(1, 1);
+export const staticLabelMaterialElement = (
+    <meshBasicMaterial
+        color="white"
+        toneMapped={false}
+    />
+);

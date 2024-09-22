@@ -22,14 +22,40 @@ const [SequencerCellInstances, SequencerCellInstance] =
     createInstances<SequencerCellInstanceAttributes>();
 
 function SequencerCell({ index }: SequencerCellProps) {
-    const cellRecord = useGlobalStore((state) => state.sequencerCells[index]);
-    const cellEditMode = useGlobalStore((state) => state.cellEditMode);
+    const [cellRecord, setCellRecord] = useState(
+        useGlobalStore.getState().sequencerCells[index]
+    );
+    const [cellEditMode, setCellEditMode] = useState(
+        useGlobalStore.getState().cellEditMode
+    );
     const [alive, setAlive] = useState(aliveStates.includes(cellRecord.state));
     const [playing, setPlaying] = useState(cellRecord.playing);
     const [sequenceColumnActive, setSequenceColumnActive] = useState(false);
     const [hovered, setHovered] = useState(false);
     useCursor(hovered);
 
+    useEffect(() => {
+        const unsubCellRecord = useGlobalStore.subscribe(
+            (state) => state.sequencerCells[index],
+            (value) => {
+                setCellRecord(value);
+            }
+        );
+        return () => {
+            unsubCellRecord();
+        };
+    });
+    useEffect(() => {
+        const unsubCellEditMode = useGlobalStore.subscribe(
+            (state) => state.cellEditMode,
+            (value) => {
+                setCellEditMode(value);
+            }
+        );
+        return () => {
+            unsubCellEditMode();
+        };
+    });
     useEffect(() => {
         const unsubState = useGlobalStore.subscribe(
             (state) => state.sequencerCells[index].state,
@@ -45,7 +71,6 @@ function SequencerCell({ index }: SequencerCellProps) {
             unsubState();
         };
     });
-
     useEffect(() => {
         const unsubPlaying = useGlobalStore.subscribe(
             (state) => state.sequencerCells[index].playing,
@@ -57,7 +82,6 @@ function SequencerCell({ index }: SequencerCellProps) {
             unsubPlaying();
         };
     });
-
     useEffect(() => {
         const unsubSequenceColumnActive = useGlobalStore.subscribe(
             (state) => state.currentSequencerIndex,
@@ -69,7 +93,6 @@ function SequencerCell({ index }: SequencerCellProps) {
             unsubSequenceColumnActive();
         };
     });
-
     useEffect(() => {
         const unsubPlayState = useGlobalStore.subscribe(
             (state) => state.playState,
@@ -170,9 +193,54 @@ function SequencerCell({ index }: SequencerCellProps) {
 }
 
 export default function Sequencer() {
-    const sequencerLength = useGlobalStore((state) => state.sequencerLength);
-    const sequencerHeight = useGlobalStore((state) => state.sequencerHeight);
-    const sequencerCells = useGlobalStore((state) => state.sequencerCells);
+    const [sequencerLength, setSequencerLength] = useState(
+        useGlobalStore.getState().sequencerLength
+    );
+    const [sequencerHeight, setSequencerHeight] = useState(
+        useGlobalStore.getState().sequencerHeight
+    );
+    const [sequencerCellKeys, setSequencerCellKeys] = useState(
+        Object.keys(useGlobalStore.getState().sequencerCells)
+    );
+
+    useEffect(() => {
+        const unsubSequencerLength = useGlobalStore.subscribe(
+            (state) => state.sequencerLength,
+            (value) => {
+                setSequencerLength(value);
+            }
+        );
+        return () => {
+            unsubSequencerLength();
+        };
+    });
+    useEffect(() => {
+        const unsubSequencerHeight = useGlobalStore.subscribe(
+            (state) => state.sequencerHeight,
+            (value) => {
+                setSequencerHeight(value);
+            }
+        );
+        return () => {
+            unsubSequencerHeight();
+        };
+    });
+    useEffect(() => {
+        const unsubSequencerCells = useGlobalStore.subscribe(
+            (state) => state.sequencerCells,
+            (value) => {
+                for (const cellKey in value) {
+                    if (!sequencerCellKeys.includes(cellKey)) {
+                        setSequencerCellKeys(Object.keys(value));
+                        break;
+                    }
+                }
+            }
+        );
+        return () => {
+            unsubSequencerCells();
+        };
+    });
 
     function modifyShader(
         shader: WebGLProgramParametersWithUniforms
@@ -211,12 +279,14 @@ void main() {
                     name="specialCellState"
                     defaultValue={0}
                 />
-                {Object.keys(sequencerCells).map((cellKey) => (
-                    <SequencerCell
-                        key={cellKey}
-                        index={parseInt(cellKey)}
-                    />
-                ))}
+                {sequencerCellKeys.map((cellKey) => {
+                    return (
+                        <SequencerCell
+                            key={cellKey}
+                            index={parseInt(cellKey)}
+                        />
+                    );
+                })}
             </SequencerCellInstances>
         </group>
     );

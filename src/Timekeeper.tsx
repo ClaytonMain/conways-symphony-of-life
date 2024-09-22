@@ -208,10 +208,13 @@ export default function Timekeeper() {
         if (drumSampler && drumTypesToPlay.length > 0) {
             playDrums(drumSampler, drumTypesToPlay, drumDuration);
         }
-
+        if (Object.keys(cellsToUpdate).length) {
+            useGlobalStore.setState((state) => {
+                state.sequencerCells = sequencerCells;
+            });
+        }
         useGlobalStore.setState((state) => {
             state.currentSequencerIndex = sequencerIndexRef.current;
-            state.sequencerCells = sequencerCells;
         });
         if (nextNoteGroupIndex !== currentNoteGroupIndex) {
             useGlobalStore.setState((state) => {
