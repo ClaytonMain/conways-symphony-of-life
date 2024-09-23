@@ -7,6 +7,7 @@ import {
     Stats,
 } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { enableMapSet } from "immer";
 import { Suspense, useState } from "react";
 import * as THREE from "three";
@@ -56,6 +57,7 @@ function App() {
 
     return (
         <>
+            <SpeedInsights />
             <DetectClick />
             <Canvas
                 orthographic
