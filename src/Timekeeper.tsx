@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { aliveStates } from "./constants";
 import { getCellsToUpdateOnNextTick } from "./gameOfLifeFunctions";
 import { SequencerCell } from "./sharedTypes";
@@ -7,14 +7,21 @@ import { useGlobalStore } from "./stores/useGlobalStore";
 import { playDrums, playSynthNotes } from "./synthAndDrumFunctions";
 
 export default function Timekeeper() {
-    const sequencerLength = useGlobalStore((state) => state.sequencerLength);
-    const npm = useGlobalStore((state) => state.npm);
-    const npt = useGlobalStore((state) => state.npt);
-    const npg = useGlobalStore((state) => state.npg);
-    const playState = useGlobalStore((state) => state.playState);
-    const noteDuration = useGlobalStore((state) => state.noteDuration);
-    const drumDuration = useGlobalStore((state) => state.drumDuration);
-
+    const [sequencerLength, setSequencerLength] = useState(
+        useGlobalStore.getState().sequencerLength
+    );
+    const [npm, setNpm] = useState(useGlobalStore.getState().npm);
+    const [npt, setNpt] = useState(useGlobalStore.getState().npt);
+    const [npg, setNpg] = useState(useGlobalStore.getState().npg);
+    const [playState, setPlayState] = useState(
+        useGlobalStore.getState().playState
+    );
+    const [noteDuration, setNoteDuration] = useState(
+        useGlobalStore.getState().noteDuration
+    );
+    const [drumDuration, setDrumDuration] = useState(
+        useGlobalStore.getState().drumDuration
+    );
     const indexDurationRef = useRef(0);
     const sequencerIndexRef = useRef(
         useGlobalStore.getState().currentSequencerIndex
@@ -22,6 +29,84 @@ export default function Timekeeper() {
     const shouldIncrementIndexRef = useRef(false);
     const tickPlayedNotesCountRef = useRef<number | null>(null);
     const groupPlayedNotesCountRef = useRef<number | null>(null);
+
+    useEffect(() => {
+        const unsubSequencerLength = useGlobalStore.subscribe(
+            (state) => state.sequencerLength,
+            (value) => {
+                setSequencerLength(value);
+            }
+        );
+        return () => {
+            unsubSequencerLength();
+        };
+    });
+    useEffect(() => {
+        const unsubNpm = useGlobalStore.subscribe(
+            (state) => state.npm,
+            (value) => {
+                setNpm(value);
+            }
+        );
+        return () => {
+            unsubNpm();
+        };
+    });
+    useEffect(() => {
+        const unsubNpt = useGlobalStore.subscribe(
+            (state) => state.npt,
+            (value) => {
+                setNpt(value);
+            }
+        );
+        return () => {
+            unsubNpt();
+        };
+    });
+    useEffect(() => {
+        const unsubNpg = useGlobalStore.subscribe(
+            (state) => state.npg,
+            (value) => {
+                setNpg(value);
+            }
+        );
+        return () => {
+            unsubNpg();
+        };
+    });
+    useEffect(() => {
+        const unsubPlayState = useGlobalStore.subscribe(
+            (state) => state.playState,
+            (value) => {
+                setPlayState(value);
+            }
+        );
+        return () => {
+            unsubPlayState();
+        };
+    });
+    useEffect(() => {
+        const unsubNoteDuration = useGlobalStore.subscribe(
+            (state) => state.noteDuration,
+            (value) => {
+                setNoteDuration(value);
+            }
+        );
+        return () => {
+            unsubNoteDuration();
+        };
+    });
+    useEffect(() => {
+        const unsubDrumDuration = useGlobalStore.subscribe(
+            (state) => state.drumDuration,
+            (value) => {
+                setDrumDuration(value);
+            }
+        );
+        return () => {
+            unsubDrumDuration();
+        };
+    });
 
     function moduloIncrement(
         value: number | null,

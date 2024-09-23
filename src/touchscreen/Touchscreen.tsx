@@ -67,7 +67,9 @@ function ValueChangeDisplay() {
         useGlobalStore.getState().displayValue
     );
     const [showValueChangeDisplay, setShowValueChangeDisplay] = useState(false);
-    const displayLabel = useGlobalStore((state) => state.displayLabel);
+    const [displayLabel, setDisplayLabel] = useState(
+        useGlobalStore.getState().displayLabel
+    );
     const displayDurationRef = useRef(10);
 
     useEffect(() => {
@@ -88,7 +90,6 @@ function ValueChangeDisplay() {
             unsubDisplayValue();
         };
     });
-
     useEffect(() => {
         const unsubShowNoteGroupEditDisplay = useGlobalStore.subscribe(
             (state) => state.showNoteGroupEditDisplay,
@@ -102,6 +103,17 @@ function ValueChangeDisplay() {
         );
         return () => {
             unsubShowNoteGroupEditDisplay();
+        };
+    });
+    useEffect(() => {
+        const unsubDisplayLabel = useGlobalStore.subscribe(
+            (state) => state.displayLabel,
+            (value) => {
+                setDisplayLabel(value);
+            }
+        );
+        return () => {
+            unsubDisplayLabel();
         };
     });
 
@@ -525,7 +537,7 @@ function NoteGroupEditDisplay({
         -displayPlaneArgs[0] / 2 + 0.5 + (displayPlaneArgs[0] * 7) / (28 * 2);
     const whiteKeyWidth = displayPlaneArgs[0] / 28;
 
-    const synth = useGlobalStore((state) => state.synth);
+    const [synth, setSynth] = useState(useGlobalStore.getState().synth);
 
     useEffect(() => {
         const unsubEditingNoteGroups = useGlobalStore.subscribe(
@@ -552,7 +564,6 @@ function NoteGroupEditDisplay({
             unsubEditingNoteGroups();
         };
     });
-
     useEffect(() => {
         const unsubShowValueChangeDisplay = useGlobalStore.subscribe(
             (state) => state.showValueChangeDisplay,
@@ -567,7 +578,6 @@ function NoteGroupEditDisplay({
             unsubShowValueChangeDisplay();
         };
     });
-
     useEffect(() => {
         const unsubCurrentNoteGroupIndex = useGlobalStore.subscribe(
             (state) => state.currentNoteGroupIndex,
@@ -595,6 +605,17 @@ function NoteGroupEditDisplay({
         );
         return () => {
             unsubCurrentNoteGroupIndex();
+        };
+    });
+    useEffect(() => {
+        const unsubSynth = useGlobalStore.subscribe(
+            (state) => state.synth,
+            (value) => {
+                setSynth(value);
+            }
+        );
+        return () => {
+            unsubSynth();
         };
     });
 
@@ -892,8 +913,12 @@ function NoteGroupEditDisplay({
 }
 
 function Displays() {
-    const sequencerLength = useGlobalStore((state) => state.sequencerLength);
-    const sequencerHeight = useGlobalStore((state) => state.sequencerHeight);
+    const [sequencerLength, setSequencerLength] = useState(
+        useGlobalStore.getState().sequencerLength
+    );
+    const [sequencerHeight, setSequencerHeight] = useState(
+        useGlobalStore.getState().sequencerHeight
+    );
     const noteGroupCellHeight = useGlobalStore(
         (state) => state.noteGroupCellHeight
     );
@@ -920,6 +945,28 @@ function Displays() {
             setVariant("hideSlow");
         }
     }, [showNoteGroupEditDisplay, showValueChangeDisplay]);
+    useEffect(() => {
+        const unsubSequencerLength = useGlobalStore.subscribe(
+            (state) => state.sequencerLength,
+            (value) => {
+                setSequencerLength(value);
+            }
+        );
+        return () => {
+            unsubSequencerLength();
+        };
+    });
+    useEffect(() => {
+        const unsubSequencerHeight = useGlobalStore.subscribe(
+            (state) => state.sequencerHeight,
+            (value) => {
+                setSequencerHeight(value);
+            }
+        );
+        return () => {
+            unsubSequencerHeight();
+        };
+    });
 
     return (
         <group position={[0, 0, 0.1]}>

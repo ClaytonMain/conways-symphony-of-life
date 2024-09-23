@@ -1,5 +1,5 @@
 import { Center, Instances, Text } from "@react-three/drei";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     arrowGeometry,
     buttonLabelElementMaterial,
@@ -695,7 +695,20 @@ function TimingControls({ position }: { position: [number, number, number] }) {
 }
 
 export default function Controls() {
-    const sequencerHeight = useGlobalStore((state) => state.sequencerHeight);
+    const [sequencerHeight, setSequencerHeight] = useState(
+        useGlobalStore.getState().sequencerHeight
+    );
+    useEffect(() => {
+        const unsubSequencerHeight = useGlobalStore.subscribe(
+            (state) => state.sequencerHeight,
+            (value) => {
+                setSequencerHeight(value);
+            }
+        );
+        return () => {
+            unsubSequencerHeight();
+        };
+    });
     return (
         <group position={[0, sequencerHeight, 0]}>
             <Center precise={false}>

@@ -4,7 +4,26 @@ import { drumNoteMap } from "./constants";
 import { useGlobalStore } from "./stores/useGlobalStore";
 
 export default function SynthAndDrumStatesController() {
-    const userHasClicked = useGlobalStore((state) => state.userHasClicked);
+    const [userHasClicked, setUserHasClicked] = useState(
+        useGlobalStore.getState().userHasClicked
+    );
+    const [npm, setNpm] = useState(useGlobalStore.getState().npm);
+    const [voiceMode, setVoiceMode] = useState(
+        useGlobalStore.getState().voiceMode
+    );
+    const [waveform, setWaveform] = useState(
+        useGlobalStore.getState().waveform
+    );
+    const [synthVolume, setSynthVolume] = useState(
+        useGlobalStore.getState().synthVolume
+    );
+    const [drumsVolume, setDrumsVolume] = useState(
+        useGlobalStore.getState().drumsVolume
+    );
+    const [attack, setAttack] = useState(useGlobalStore.getState().attack);
+    const [decay, setDecay] = useState(useGlobalStore.getState().decay);
+    const [sustain, setSustain] = useState(useGlobalStore.getState().sustain);
+    const [release, setRelease] = useState(useGlobalStore.getState().release);
     const [synth, setSynth] = useState<Tone.PolySynth | Tone.MonoSynth | null>(
         useGlobalStore.getState().synth
     );
@@ -14,15 +33,117 @@ export default function SynthAndDrumStatesController() {
     const [, setEqualizer] = useState<Tone.EQ3 | null>(
         useGlobalStore.getState().equalizer
     );
-    const npm = useGlobalStore((state) => state.npm);
-    const voiceMode = useGlobalStore((state) => state.voiceMode);
-    const waveform = useGlobalStore((state) => state.waveform);
-    const synthVolume = useGlobalStore((state) => state.synthVolume);
-    const drumsVolume = useGlobalStore((state) => state.drumsVolume);
-    const attack = useGlobalStore((state) => state.attack);
-    const decay = useGlobalStore((state) => state.decay);
-    const sustain = useGlobalStore((state) => state.sustain);
-    const release = useGlobalStore((state) => state.release);
+
+    useEffect(() => {
+        const unsubUserHasClicked = useGlobalStore.subscribe(
+            (state) => state.userHasClicked,
+            (value) => {
+                setUserHasClicked(value);
+            }
+        );
+        return () => {
+            unsubUserHasClicked();
+        };
+    });
+    useEffect(() => {
+        const unsubNpm = useGlobalStore.subscribe(
+            (state) => state.npm,
+            (value) => {
+                setNpm(value);
+            }
+        );
+        return () => {
+            unsubNpm();
+        };
+    });
+    useEffect(() => {
+        const unsubVoiceMode = useGlobalStore.subscribe(
+            (state) => state.voiceMode,
+            (value) => {
+                setVoiceMode(value);
+            }
+        );
+        return () => {
+            unsubVoiceMode();
+        };
+    });
+    useEffect(() => {
+        const unsubWaveform = useGlobalStore.subscribe(
+            (state) => state.waveform,
+            (value) => {
+                setWaveform(value);
+            }
+        );
+        return () => {
+            unsubWaveform();
+        };
+    });
+    useEffect(() => {
+        const unsubSynthVolume = useGlobalStore.subscribe(
+            (state) => state.synthVolume,
+            (value) => {
+                setSynthVolume(value);
+            }
+        );
+        return () => {
+            unsubSynthVolume();
+        };
+    });
+    useEffect(() => {
+        const unsubDrumsVolume = useGlobalStore.subscribe(
+            (state) => state.drumsVolume,
+            (value) => {
+                setDrumsVolume(value);
+            }
+        );
+        return () => {
+            unsubDrumsVolume();
+        };
+    });
+    useEffect(() => {
+        const unsubAttack = useGlobalStore.subscribe(
+            (state) => state.attack,
+            (value) => {
+                setAttack(value);
+            }
+        );
+        return () => {
+            unsubAttack();
+        };
+    });
+    useEffect(() => {
+        const unsubDecay = useGlobalStore.subscribe(
+            (state) => state.decay,
+            (value) => {
+                setDecay(value);
+            }
+        );
+        return () => {
+            unsubDecay();
+        };
+    });
+    useEffect(() => {
+        const unsubSustain = useGlobalStore.subscribe(
+            (state) => state.sustain,
+            (value) => {
+                setSustain(value);
+            }
+        );
+        return () => {
+            unsubSustain();
+        };
+    });
+    useEffect(() => {
+        const unsubRelease = useGlobalStore.subscribe(
+            (state) => state.release,
+            (value) => {
+                setRelease(value);
+            }
+        );
+        return () => {
+            unsubRelease();
+        };
+    });
 
     useEffect(() => {
         if (!synth) return;
