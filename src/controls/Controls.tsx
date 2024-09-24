@@ -20,7 +20,6 @@ import {
 } from "../sharedTypes";
 import { useGlobalStore } from "../stores/useGlobalStore";
 import InstancedButtonOrLabel from "./InstancedButtonOrLabel";
-import InstrumentButton from "./InstrumentButton";
 import ValuesKnob from "./ValuesKnob";
 
 function NoteGroupsControls({
@@ -96,12 +95,12 @@ function NoteGroupsControls({
                 <meshBasicMaterial
                     color={"black"}
                     transparent
-                    opacity={0.8}
+                    opacity={0.5}
                 />
             </mesh>
             <Text
                 fontWeight={"bold"}
-                position={[0, 0, 0.1]}
+                position={[0, 0, 0.01]}
             >
                 <meshBasicMaterial
                     color={colors.background}
@@ -140,19 +139,28 @@ function NoteGroupsControls({
                     handleGroupChangeModeChange(index);
                 }}
             />
-            <InstrumentButton
-                position={[2, -6, 0]}
-                buttonScale={[2.25, 1.0, 1]}
-                label="EDIT"
-                labelDistanceFactor={20}
-                onClick={() => {
-                    useGlobalStore.setState((state) => {
-                        state.editingNoteGroups = true;
-                        state.cellsIgnorePointerEvents = true;
-                        state.playState = "stopped";
-                    });
-                }}
-            />
+            <Instances
+                limit={1}
+                geometry={genericBoxGeometry}
+                material={buttonMaterial}
+            >
+                <InstancedButtonOrLabel
+                    position={[2, -6, 0]}
+                    scale={0.9}
+                    boxScale={[2.25, 1.0, 1]}
+                    label="EDIT"
+                    onClick={() => {
+                        useGlobalStore.setState((state) => {
+                            state.editingNoteGroups = true;
+                            state.cellsIgnorePointerEvents = true;
+                            state.playState = "stopped";
+                        });
+                    }}
+                    labelScale={0.6}
+                    labelZPosition={0.51}
+                    labelMaterialElement={staticLabelMaterialElement}
+                />
+            </Instances>
         </group>
     );
 }
@@ -247,12 +255,12 @@ function CellControls({ position }: { position: [number, number, number] }) {
                 <meshBasicMaterial
                     color={"black"}
                     transparent
-                    opacity={0.8}
+                    opacity={0.5}
                 />
             </mesh>
             <Text
                 fontWeight={"bold"}
-                position={[0, 0, 0.1]}
+                position={[0, 0, 0.01]}
             >
                 <meshBasicMaterial
                     color={colors.background}
@@ -471,12 +479,12 @@ function SynthControls({ position }: { position: [number, number, number] }) {
                 <meshBasicMaterial
                     color={"black"}
                     transparent
-                    opacity={0.8}
+                    opacity={0.5}
                 />
             </mesh>
             <Text
                 fontWeight={"bold"}
-                position={[0, 0, 0.1]}
+                position={[0, 0, 0.01]}
             >
                 <meshBasicMaterial
                     color={colors.background}
@@ -617,12 +625,12 @@ function TimingControls({ position }: { position: [number, number, number] }) {
                 <meshBasicMaterial
                     color={"black"}
                     transparent
-                    opacity={0.8}
+                    opacity={0.5}
                 />
             </mesh>
             <Text
                 fontWeight={"bold"}
-                position={[0, 0, 0.1]}
+                position={[0, 0, 0.01]}
             >
                 <meshBasicMaterial
                     color={colors.background}
@@ -645,48 +653,48 @@ function TimingControls({ position }: { position: [number, number, number] }) {
                 material={buttonMaterial}
             >
                 <InstancedButtonOrLabel
-                    position={[0, -5.5, 0]}
+                    position={[0, -5.5, 0.2]}
                     scale={0.9}
-                    boxScale={[2.25, 1.0, 1]}
+                    boxScale={[2.25, 1.0, 0.5]}
                     onClick={() => {
                         handlePlayPause();
                     }}
                 >
                     <group
-                        position={[0, -5.5, 0]}
+                        position={[0, -5.5, 0.5]}
                         scale={0.8}
                     >
                         <mesh
-                            position={[-0.5, 0, 0.539]}
+                            position={[-0.5, 0, 0]}
                             scale={[4.5, 0.1, 4.5]}
                             geometry={arrowGeometry}
                             material={buttonLabelElementMaterial}
                             rotation={[Math.PI / 2, Math.PI / 2, 0]}
                         />
                         <mesh
-                            position={[0.2, 0, 1.1]}
-                            scale={[0.25, 0.8, 1.0]}
+                            position={[0.2, 0, 0]}
+                            scale={[0.25, 0.8, 0.05]}
                             geometry={genericBoxGeometry}
                             material={buttonLabelElementMaterial}
                         />
                         <mesh
-                            position={[0.6, 0, 1.1]}
-                            scale={[0.25, 0.8, 1.0]}
+                            position={[0.6, 0, 0]}
+                            scale={[0.25, 0.8, 0.05]}
                             geometry={genericBoxGeometry}
                             material={buttonLabelElementMaterial}
                         />
                     </group>
                 </InstancedButtonOrLabel>
                 <InstancedButtonOrLabel
-                    position={[0, -6.5, 0]}
+                    position={[0, -6.5, 0.2]}
                     scale={0.9}
-                    boxScale={[2.25, 1.0, 1]}
+                    boxScale={[2.25, 1, 0.5]}
                     label="STOP"
                     onClick={() => {
                         handleStop();
                     }}
                     labelScale={0.6}
-                    labelZPosition={0.51}
+                    labelZPosition={0.45}
                     labelMaterialElement={staticLabelMaterialElement}
                 />
             </Instances>
@@ -694,7 +702,11 @@ function TimingControls({ position }: { position: [number, number, number] }) {
     );
 }
 
-export default function Controls() {
+export default function Controls({
+    position,
+}: {
+    position?: [number, number, number];
+}) {
     const [sequencerHeight, setSequencerHeight] = useState(
         useGlobalStore.getState().sequencerHeight
     );
@@ -710,7 +722,7 @@ export default function Controls() {
         };
     });
     return (
-        <group position={[0, sequencerHeight, 0]}>
+        <group position={position ?? [0, sequencerHeight, 0.05]}>
             <Center precise={false}>
                 <NoteGroupsControls position={[0, 0, 0]} />
                 <CellControls position={[10.5, 0, 0]} />

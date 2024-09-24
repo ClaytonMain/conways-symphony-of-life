@@ -295,9 +295,10 @@ export default function NoteGroups() {
                             boxScale={[2, 1, 0.01]}
                             labelScale={0.75}
                             label={note.frequency.toNote()}
-                            position={[-1.5, i + 0.5, 0]}
+                            position={[-1.5, i + 0.5, -0.005]}
                             hoverCursor={false}
                             labelMaterialElement={staticLabelMaterialElement}
+                            labelZPosition={0.1}
                         />
                     );
                 })}

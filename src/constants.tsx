@@ -79,5 +79,6 @@ export const staticLabelMaterialElement = (
     <meshBasicMaterial
         color="white"
         toneMapped={false}
+        // transparent
     />
 );

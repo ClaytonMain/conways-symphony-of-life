@@ -107,6 +107,7 @@ export default function InstancedButtonOrLabel({
                     textAlign={labelTextAlign}
                     anchorX={labelAnchorX}
                     anchorY={labelAnchorY}
+                    frustumCulled={false}
                 >
                     {labelMaterialElement}
                     {label}

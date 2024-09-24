@@ -2,6 +2,8 @@ import {
     Center,
     Instance,
     Instances,
+    OrthographicCamera,
+    RenderTexture,
     Text,
     useCursor,
     useTexture,
@@ -129,6 +131,17 @@ function ValueChangeDisplay() {
             }
         }
     });
+    const materialComponent = (
+        <motion.meshBasicMaterial
+            initial={"hidden"}
+            animate={variant}
+            variants={displayVariants}
+            color={colors.lightText}
+            transparent
+            opacity={0.0}
+            toneMapped={false}
+        />
+    );
 
     return (
         <>
@@ -137,15 +150,7 @@ function ValueChangeDisplay() {
                 fontWeight={"bold"}
                 anchorY={"bottom"}
             >
-                <motion.meshBasicMaterial
-                    initial={"hidden"}
-                    animate={variant}
-                    variants={displayVariants}
-                    color="white"
-                    transparent
-                    opacity={0.0}
-                    toneMapped={false}
-                />
+                {materialComponent}
                 {displayLabel}
             </Text>
             <Text
@@ -156,15 +161,7 @@ function ValueChangeDisplay() {
                 textAlign={"center"}
                 anchorY={"top"}
             >
-                <motion.meshBasicMaterial
-                    initial={"hidden"}
-                    animate={variant}
-                    variants={displayVariants}
-                    color="white"
-                    transparent
-                    opacity={0.0}
-                    toneMapped={false}
-                />
+                {materialComponent}
                 {displayValue}
             </Text>
         </>
@@ -275,6 +272,7 @@ interface ScreenArrowSelectorProps {
     variants?: DisplayVariants;
     label?: string;
     labelScale?: [number, number, number] | number | THREE.Vector3;
+    motionMaterialElement?: JSX.Element;
 }
 function ScreenArrowSelector({
     position,
@@ -286,6 +284,7 @@ function ScreenArrowSelector({
     variants,
     label,
     labelScale = 1,
+    motionMaterialElement,
 }: ScreenArrowSelectorProps) {
     const [currentOptionIndex, setCurrentOptionIndex] =
         useState(startingOptionIndex);
@@ -320,10 +319,27 @@ function ScreenArrowSelector({
         }
     }
 
+    const material = motionMaterialElement ?? (
+        <motion.meshBasicMaterial
+            initial={"hidden"}
+            animate={animate}
+            variants={variants}
+            color={colors.lightText}
+            transparent
+        />
+    );
+    const arrowButtonMaterial = (
+        <motion.meshBasicMaterial
+            {...material.props}
+            transparent
+            alphaMap={arrowButtonAlphaMap}
+        />
+    );
+
     return (
         <group position={position}>
             <group
-                position={[0, 1.25, 0.01]}
+                position={[0, 1.25, 0]}
                 onClick={() => handleOnClick(1)}
                 onPointerOver={() =>
                     handlePointerEvents({ pointerEventType: "over" })
@@ -335,20 +351,12 @@ function ScreenArrowSelector({
                 <mesh
                     geometry={genericBoxGeometry}
                     scale={[1.5, 1, 0.01]}
-                    position={[0, 0, 0]}
                 >
-                    <motion.meshBasicMaterial
-                        initial={"hidden"}
-                        animate={animate}
-                        variants={variants}
-                        color={"white"}
-                        transparent
-                        alphaMap={arrowButtonAlphaMap}
-                    />
+                    {arrowButtonMaterial}
                 </mesh>
             </group>
             <group
-                position={[0, -1.25, 0.01]}
+                position={[0, -1.25, 0]}
                 rotation={[0, 0, Math.PI]}
                 onClick={() => handleOnClick(-1)}
                 onPointerOver={() =>
@@ -361,48 +369,27 @@ function ScreenArrowSelector({
                 <mesh
                     geometry={genericBoxGeometry}
                     scale={[1.5, 1, 0.01]}
-                    position={[0, 0, 0]}
                 >
-                    <motion.meshBasicMaterial
-                        initial={"hidden"}
-                        animate={animate}
-                        variants={variants}
-                        color={"white"}
-                        transparent
-                        alphaMap={arrowButtonAlphaMap}
-                    />
+                    {arrowButtonMaterial}
                 </mesh>
             </group>
             <Text
                 fontWeight={"bold"}
-                position={[0, 0, 0.01]}
                 textAlign="center"
                 scale={optionScale}
             >
-                <motion.meshBasicMaterial
-                    initial={"hidden"}
-                    animate={animate}
-                    variants={variants}
-                    color="white"
-                    transparent
-                />
+                {material}
                 {options[currentOptionIndex]}
             </Text>
             <Text
                 fontWeight={"bold"}
-                position={[0, -1.75, 0.01]}
+                position={[0, -1.75, 0]}
                 textAlign="center"
                 anchorY={"top"}
                 fontSize={0.5}
                 scale={labelScale}
             >
-                <motion.meshBasicMaterial
-                    initial={"hidden"}
-                    animate={animate}
-                    variants={variants}
-                    color="white"
-                    transparent
-                />
+                {material}
                 {label}
             </Text>
         </group>
@@ -740,6 +727,7 @@ function NoteGroupEditDisplay({
                         animate={variant}
                         variants={displayVariants}
                         transparent
+                        toneMapped={false}
                     />
                     {Array.from({ length: 36 }, (_, i) => (
                         <PianoKey
@@ -785,6 +773,7 @@ function NoteGroupEditDisplay({
                     animate={variant}
                     variants={displayVariants}
                     label={"OCTAVE"}
+                    motionMaterialElement={motionBasicWhiteMaterial}
                 />
                 <ScreenArrowSelector
                     position={[3, 0, 0]}
@@ -799,6 +788,7 @@ function NoteGroupEditDisplay({
                     animate={variant}
                     variants={displayVariants}
                     label={"OCTAVE\nINCREMENT"}
+                    motionMaterialElement={motionBasicWhiteMaterial}
                 />
                 <group position={[0, -5, 0]}>
                     <mesh
@@ -969,8 +959,15 @@ function Displays() {
     });
 
     return (
-        <group position={[0, 0, 0.1]}>
-            <mesh position={[0, 0, -0.05]}>
+        <group position={[0, 0, 0]}>
+            {/* <mesh position={[0, 0, -0.4]}>
+                <planeGeometry args={displayPlaneArgs} />
+                <meshBasicMaterial
+                    color={colors.background}
+                    toneMapped={false}
+                />
+            </mesh> */}
+            <mesh position={[0, 0, -0.1]}>
                 <planeGeometry args={displayPlaneArgs} />
                 <motion.meshBasicMaterial
                     initial={"hidden"}
@@ -990,15 +987,41 @@ function Displays() {
     );
 }
 
-export default function Touchscreen() {
+export default function Touchscreen({
+    position = [0, 0, 0],
+}: {
+    position?: [number, number, number];
+}) {
+    const planeSize: [number, number] = [35, 22];
     return (
-        <group>
-            <Displays />
-            <Center>
-                <Sequencer />
-                <NoteGroups />
-                <DrumSequencer />
-            </Center>
-        </group>
+        <mesh position={position}>
+            <planeGeometry args={planeSize} />
+            <meshBasicMaterial toneMapped={false}>
+                <RenderTexture
+                    attach="map"
+                    anisotropy={16}
+                >
+                    <OrthographicCamera
+                        makeDefault
+                        position={[0, 0, 10]}
+                        zoom={1}
+                        left={-planeSize[0] / 2}
+                        right={planeSize[0] / 2}
+                        top={planeSize[1] / 2}
+                        bottom={-planeSize[1] / 2}
+                    />
+                    <color
+                        attach="background"
+                        args={[colors.background]}
+                    />
+                    <Displays />
+                    <Center position={[0, 0, -0.2]}>
+                        <Sequencer />
+                        <NoteGroups />
+                        <DrumSequencer />
+                    </Center>
+                </RenderTexture>
+            </meshBasicMaterial>
+        </mesh>
     );
 }

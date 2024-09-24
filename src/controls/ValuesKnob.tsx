@@ -6,6 +6,7 @@ import {
     genericCircleGeometry,
     knobDotMaterial,
     knobGeometry,
+    staticLabelMaterialElement,
 } from "../constants";
 import { useGlobalStore } from "../stores/useGlobalStore";
 import "./Controls.css";
@@ -35,6 +36,7 @@ export default function ValuesKnob({
     label = "",
     labelOptions = true,
 }: ValuesKnobProps) {
+    const [dragging, setDragging] = useState(false);
     const knobRadius = 1;
     const ref = useRef<THREE.Group>(null!);
     const dragStartRotationRef = useRef(0);
@@ -49,7 +51,7 @@ export default function ValuesKnob({
     const angleRange = angleRangeValues[0] - angleRangeValues[1];
 
     function handleOnDrag(deltaLocalMatrix: THREE.Matrix4) {
-        const dragY = deltaLocalMatrix.toArray()[13];
+        const dragY = deltaLocalMatrix.toArray()[13] * 100;
 
         const newIndex = Math.round(
             Math.max(Math.min(dragStartIndexRef.current + dragY, ticks - 1), 0)
@@ -64,7 +66,7 @@ export default function ValuesKnob({
     }
 
     function handleOnClick() {
-        console.log("handleOnClick");
+        if (dragging) return;
         const newIndex = (index + 1) % ticks;
         const rotationPercent = newIndex / (ticks - 1);
         const rotationAngle =
@@ -106,7 +108,6 @@ export default function ValuesKnob({
                                 fontWeight={"bold"}
                                 lineHeight={1}
                                 scale={0.35}
-                                color={"black"}
                                 textAlign={"center"}
                                 anchorY={
                                     Math.sign(
@@ -134,6 +135,7 @@ export default function ValuesKnob({
                                         : "right"
                                 }
                             >
+                                {staticLabelMaterialElement}
                                 {val}
                             </Text>
                         );
@@ -145,10 +147,10 @@ export default function ValuesKnob({
                 fontWeight={"bold"}
                 lineHeight={1}
                 scale={0.35}
-                color={"black"}
                 textAlign={"center"}
                 anchorY={"top"}
             >
+                {staticLabelMaterialElement}
                 {label}
             </Text>
             <DragControls
@@ -156,6 +158,7 @@ export default function ValuesKnob({
                 dragLimits={[[0, 0], undefined, [0, 0]]}
                 autoTransform={false}
                 onDragStart={() => {
+                    setDragging(true);
                     dragStartRotationRef.current = ref.current.rotation.z;
                     dragStartIndexRef.current = index;
                     useGlobalStore.setState({ cellsIgnorePointerEvents: true });
@@ -164,6 +167,7 @@ export default function ValuesKnob({
                     handleOnDrag(deltaLocalMatrix);
                 }}
                 onDragEnd={() => {
+                    setDragging(false);
                     dragStartRotationRef.current = ref.current.rotation.z;
                     dragStartIndexRef.current = index;
                     useGlobalStore.setState({
@@ -174,6 +178,7 @@ export default function ValuesKnob({
             >
                 <group onClick={handleOnClick}>
                     <mesh
+                        castShadow
                         geometry={knobGeometry}
                         material={buttonMaterial}
                         material-flatShading={true}
