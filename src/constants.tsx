@@ -82,3 +82,9 @@ export const staticLabelMaterialElement = (
         // transparent
     />
 );
+export const volumeOptions = [
+    -600,
+    ...Array.from({ length: 10 }, (_, i) =>
+        Math.round(13 * Math.log10(i + 1) - 15)
+    ),
+];

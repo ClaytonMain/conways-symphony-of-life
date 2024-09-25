@@ -2,7 +2,6 @@ import { DragControls, Text } from "@react-three/drei";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import {
-    buttonMaterial,
     genericCircleGeometry,
     knobDotMaterial,
     knobGeometry,
@@ -179,12 +178,20 @@ export default function ValuesKnob({
                 <group onClick={handleOnClick}>
                     <mesh
                         castShadow
+                        receiveShadow
                         geometry={knobGeometry}
-                        material={buttonMaterial}
+                        // material={buttonMaterial}
                         material-flatShading={true}
                         rotation={[Math.PI / 2, 0, 0]}
                         scale={[knobRadius, knobRadius, 1]}
-                    />
+                    >
+                        <meshStandardMaterial
+                            color={"#333333"}
+                            roughness={0.5}
+                            metalness={0.5}
+                            flatShading
+                        />
+                    </mesh>
                     <mesh
                         position={[0.5, 0, 1.01]}
                         geometry={genericCircleGeometry}

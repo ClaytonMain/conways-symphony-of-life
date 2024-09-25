@@ -84,7 +84,7 @@ function App() {
                 // orthographic
                 shadows
                 dpr={dpr}
-                camera={{ position: [-0.02, 10, 1], fov: 35 }}
+                camera={{ position: [0.03, 10, 1], fov: 35 }}
                 onPointerUp={() => {
                     useGlobalStore.setState({ cameraControlsEnabled: true });
                 }}
@@ -140,13 +140,13 @@ function App() {
                         <SynthAndDrumStatesController />
                         <AccumulativeShadows
                             temporal
-                            frames={40}
+                            frames={accShadowFrames}
                             color="orange"
                             colorBlend={2}
                             toneMapped={true}
                             alphaTest={0.75}
                             opacity={2}
-                            resolution={1024}
+                            resolution={accShadowResolution}
                         >
                             <RandomizedLight
                                 intensity={Math.PI}

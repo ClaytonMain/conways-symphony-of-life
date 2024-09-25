@@ -205,7 +205,7 @@ export default function SynthAndDrumStatesController() {
             low: 0,
             mid: 0,
             high: 0,
-        }).toDestination();
+        });
         let _synth;
         if (voiceMode === "poly") {
             _synth = new Tone.PolySynth(Tone.Synth, {

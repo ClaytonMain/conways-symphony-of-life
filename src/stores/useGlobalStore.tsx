@@ -7,6 +7,7 @@ import {
     initialNpm,
     initialSequencerHeight,
     initialSequencerLength,
+    volumeOptions,
 } from "../constants.tsx";
 import { initializeSequencerCells } from "../gameOfLifeFunctions.tsx";
 import { initializeNoteGroups } from "../noteGroupFunctions.tsx";
@@ -104,8 +105,8 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             equalizer: null,
             voiceMode: "poly",
             waveform: "sine",
-            synthVolume: -10,
-            drumsVolume: -7,
+            synthVolume: volumeOptions[4],
+            drumsVolume: volumeOptions[5],
             attack: 0.005,
             decay: 0.1,
             sustain: 0.3,

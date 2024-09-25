@@ -8,6 +8,7 @@ import {
     genericBoxGeometry,
     genericPlaneGeometry,
     staticLabelMaterialElement,
+    volumeOptions,
 } from "../constants";
 import { recalculateNeighborAddresses } from "../gameOfLifeFunctions";
 import {
@@ -352,14 +353,14 @@ function SynthControls({ position }: { position: [number, number, number] }) {
     const [release, setRelease] = useState(useGlobalStore.getState().release);
 
     const synthVolumeKnobChangeOptions = {
-        knobValues: [-20, -10, -7, -5, -3, -2, -1, 0],
-        displayLabels: [-20, -10, -7, -5, -3, -2, -1, 0],
-        options: [-20, -10, -7, -5, -3, -2, -1, 0],
+        knobValues: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        displayLabels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        options: volumeOptions,
     };
     const drumsVolumeKnobChangeOptions = {
-        knobValues: [-20, -10, -7, -5, -3, -2, -1, 0],
-        displayLabels: [-20, -10, -7, -5, -3, -2, -1, 0],
-        options: [-20, -10, -7, -5, -3, -2, -1, 0],
+        knobValues: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        displayLabels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        options: volumeOptions,
     };
     const waveformKnobChangeOptions = {
         knobValues: ["SIN", "SQR", "SAW", "TRI"],
@@ -722,7 +723,7 @@ export default function Controls({
         };
     });
     return (
-        <group position={position ?? [0, sequencerHeight, 0.05]}>
+        <group position={position ?? [0, sequencerHeight, -0.1]}>
             <Center precise={false}>
                 <NoteGroupsControls position={[0, 0, 0]} />
                 <CellControls position={[10.5, 0, 0]} />
