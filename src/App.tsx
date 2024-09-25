@@ -37,6 +37,11 @@ function App() {
     const [minPan, setMinPan] = useState(new THREE.Vector3(-50, 0, -50));
     const [maxPan, setMaxPan] = useState(new THREE.Vector3(50, 0, 50));
     const _v = new THREE.Vector3();
+    const dprRange = [1, 2];
+    const [accShadowFrames, setAccShadowFrames] = useState(64);
+    const [accShadowResolution, setAccShadowResolution] = useState(1024);
+    const accShadowFramesRange = [2, 512];
+    const accShadowResolutionRange = [256, 4096];
 
     function handleOnFit(data: SizeProps) {
         const centerX = data.center.x;
@@ -98,7 +103,13 @@ function App() {
                 />
                 <PerformanceMonitor
                     onIncline={() => setDpr(2)}
-                    onDecline={() => setDpr(1)}
+                    onDecline={() => {
+                        if (dpr > 1) setDpr(1);
+                        if (accShadowFrames > accShadowFramesRange[0])
+                            setAccShadowFrames(accShadowFrames / 2);
+                        if (accShadowResolution > accShadowResolutionRange[0])
+                            setAccShadowResolution(accShadowResolution / 2);
+                    }}
                 />
                 <Suspense fallback={null}>
                     <ShortcutWrapper>
@@ -113,13 +124,13 @@ function App() {
                         <SynthAndDrumStatesController />
                         <AccumulativeShadows
                             temporal
-                            frames={100}
+                            frames={40}
                             color="orange"
                             colorBlend={2}
                             toneMapped={true}
                             alphaTest={0.75}
                             opacity={2}
-                            resolution={2048}
+                            resolution={1024}
                         >
                             <RandomizedLight
                                 intensity={Math.PI}
