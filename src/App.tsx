@@ -95,8 +95,8 @@ function App() {
                     // enableRotate={false}
                     // maxAzimuthAngle={0.05}
                     // minAzimuthAngle={-0.05}
-                    // maxPolarAngle={Math.PI / 4}
-                    // minPolarAngle={0.1}
+                    maxPolarAngle={Math.PI / 2}
+                    minPolarAngle={0}
                     target0={new THREE.Vector3(0, 0, 0)}
                     mouseButtons={{
                         LEFT: THREE.MOUSE.ROTATE,
