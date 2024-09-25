@@ -69,6 +69,7 @@ interface GlobalStoreTypes {
     editingNoteGroups: boolean;
     pendingNoteGroup: NoteGroupCell | null;
     playingNoteGroupNotesTimestamp: number | null;
+    cameraControlsEnabled: boolean;
     _placeholderValue: null;
     _placeholderSet: () => void;
     _placeholderGet: () => null;
@@ -112,7 +113,7 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             noteDuration: 0.2,
             drumDuration: 0.2,
             // release: 1,
-            cellsIgnorePointerEvents: false,
+            cellsIgnorePointerEvents: true,
             cellEditMode: null,
             noteGroupSelectMode: null,
             drumEditMode: null,
@@ -127,6 +128,7 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             editingNoteGroups: false,
             pendingNoteGroup: null,
             playingNoteGroupNotesTimestamp: null,
+            cameraControlsEnabled: true,
             _placeholderValue: null,
             _placeholderSet: () => {
                 set((state) => {

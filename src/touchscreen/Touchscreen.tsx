@@ -922,8 +922,8 @@ function Displays() {
         (state) => state.showValueChangeDisplay
     );
     const displayPlaneArgs: [number, number] = [
-        sequencerLength + noteGroupCellHeight * 2 + noteGroupCellXOffset + 4,
-        sequencerHeight + 6,
+        sequencerLength + noteGroupCellHeight * 2 + noteGroupCellXOffset,
+        sequencerHeight + 5.6,
     ];
     const [variant, setVariant] = useState<DisplayVariant>("hideFast");
 
@@ -960,13 +960,6 @@ function Displays() {
 
     return (
         <group position={[0, 0, 0]}>
-            {/* <mesh position={[0, 0, -0.4]}>
-                <planeGeometry args={displayPlaneArgs} />
-                <meshBasicMaterial
-                    color={colors.background}
-                    toneMapped={false}
-                />
-            </mesh> */}
             <mesh position={[0, 0, -0.1]}>
                 <planeGeometry args={displayPlaneArgs} />
                 <motion.meshBasicMaterial
@@ -992,9 +985,14 @@ export default function Touchscreen({
 }: {
     position?: [number, number, number];
 }) {
-    const planeSize: [number, number] = [35, 22];
+    const planeSize: [number, number] = [44.3, 21.6];
     return (
-        <mesh position={position}>
+        <mesh
+            position={position}
+            onPointerDown={() => {
+                useGlobalStore.setState({ cameraControlsEnabled: false });
+            }}
+        >
             <planeGeometry args={planeSize} />
             <meshBasicMaterial toneMapped={false}>
                 <RenderTexture

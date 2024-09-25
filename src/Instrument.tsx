@@ -10,7 +10,7 @@ type GLTFResult = GLTF & {
 };
 
 export default function Instrument(props: JSX.IntrinsicElements["group"]) {
-    const { nodes } = useGLTF("models/sequencer.glb") as GLTFResult;
+    const { nodes } = useGLTF("models/sequencer02.glb") as GLTFResult;
     const materialProps = useTexture({
         roughnessMap: "textures/Metal027_1K-JPG/Metal027_1K-JPG_Roughness.jpg",
         normalMap: "textures/Metal027_1K-JPG/Metal027_1K-JPG_NormalGL.jpg",

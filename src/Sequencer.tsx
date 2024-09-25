@@ -120,6 +120,7 @@ function SequencerCell({ index }: SequencerCellProps) {
         const ctrlKey = e.ctrlKey;
 
         if (["down", "over"].includes(pointerEventType)) {
+            if (useGlobalStore.getState().cameraControlsEnabled) return;
             if (useGlobalStore.getState().cellsIgnorePointerEvents) return;
             if (pointerEventType === "over") {
                 setHovered(true);

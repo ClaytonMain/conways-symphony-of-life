@@ -8,7 +8,7 @@ import {
     NoteOctave,
 } from "./sharedTypes";
 
-export const initialSequencerLength = 16;
+export const initialSequencerLength = 32;
 export const initialSequencerHeight = 16;
 export const initialNpm = 240;
 export const initialGameWrapMode: GameWrapMode = "both";

@@ -12,8 +12,9 @@ import {
 import { Canvas } from "@react-three/fiber";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { enableMapSet } from "immer";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
+import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import "./App.css";
 import DetectClick from "./DetectClick";
 import Instrument from "./Instrument";
@@ -23,6 +24,7 @@ import SynthAndDrumStatesController from "./SynthAndDrumStatesController";
 import Timekeeper from "./Timekeeper";
 import { colors } from "./constants";
 import Controls from "./controls/Controls";
+import { useGlobalStore } from "./stores/useGlobalStore";
 import Touchscreen from "./touchscreen/Touchscreen";
 
 enableMapSet();
@@ -42,6 +44,16 @@ function App() {
     const [accShadowResolution, setAccShadowResolution] = useState(1024);
     const accShadowFramesRange = [2, 512];
     const accShadowResolutionRange = [256, 4096];
+    const orbitControlsRef = useRef<OrbitControlsImpl>(null!);
+
+    useEffect(() => {
+        useGlobalStore.subscribe(
+            (state) => state.cameraControlsEnabled,
+            (value) => {
+                orbitControlsRef.current.enableRotate = value;
+            }
+        );
+    });
 
     function handleOnFit(data: SizeProps) {
         const centerX = data.center.x;
@@ -73,8 +85,12 @@ function App() {
                 shadows
                 dpr={dpr}
                 camera={{ position: [-0.02, 10, 1], fov: 35 }}
+                onPointerUp={() => {
+                    useGlobalStore.setState({ cameraControlsEnabled: true });
+                }}
             >
                 <OrbitControls
+                    ref={orbitControlsRef}
                     makeDefault
                     // enableRotate={false}
                     // maxAzimuthAngle={0.05}
@@ -158,7 +174,7 @@ function App() {
                                     rotation={[0.077318, 0, 0]}
                                     position={[0, -4.3, 2.7]}
                                 >
-                                    <Touchscreen position={[0, 0, -0.8]} />
+                                    <Touchscreen position={[0, -0.22, -0.8]} />
                                     <Controls />
                                 </group>
                             </group>
