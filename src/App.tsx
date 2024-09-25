@@ -104,7 +104,7 @@ function App() {
                 <PerformanceMonitor
                     onIncline={() => setDpr(2)}
                     onDecline={() => {
-                        if (dpr > 1) setDpr(1);
+                        if (dpr > dprRange[0]) setDpr(1);
                         if (accShadowFrames > accShadowFramesRange[0])
                             setAccShadowFrames(accShadowFrames / 2);
                         if (accShadowResolution > accShadowResolutionRange[0])
