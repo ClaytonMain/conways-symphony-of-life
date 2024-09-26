@@ -2,7 +2,7 @@ import { useFrame } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import { aliveStates } from "./constants";
 import { getCellsToUpdateOnNextTick } from "./gameOfLifeFunctions";
-import { SequencerCell } from "./sharedTypes";
+import { SequencerCell, SynthCheckIfPlay } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
 import { playDrums, playSynthNotes } from "./synthAndDrumFunctions";
 
@@ -174,24 +174,25 @@ export default function Timekeeper() {
         useGlobalStore.getState().noteGroupCells[nextNoteGroupIndex];
     let globallyEnabledSequencerRows =
         useGlobalStore.getState().globallyEnabledSequencerRows;
-    let noteIndicesToPlay = Object.values(sequencerCells)
-        .filter(
-            (cell) =>
-                cell.x === sequencerIndexRef.current &&
-                aliveStates.includes(cell.state) &&
-                currentNoteGroup.enabledRows[cell.y] &&
-                globallyEnabledSequencerRows[cell.y]
-        )
-        .map((cell) => cell.y);
-    let frequenciesToPlay = noteIndicesToPlay.map(
-        (noteIndex) => currentNoteGroup.notes[noteIndex].frequency
-    );
+    // let noteIndicesToPlay = Object.values(sequencerCells)
+    //     .filter(
+    //         (cell) =>
+    //             cell.x === sequencerIndexRef.current &&
+    //             aliveStates.includes(cell.state) &&
+    //             currentNoteGroup.enabledRows[cell.y] &&
+    //             globallyEnabledSequencerRows[cell.y]
+    //     )
+    //     .map((cell) => cell.y);
+    // let frequenciesToPlay = noteIndicesToPlay.map(
+    //     (noteIndex) => currentNoteGroup.notes[noteIndex].frequency
+    // );
     let voiceMode = useGlobalStore.getState().voiceMode;
     let drumSampler = useGlobalStore.getState().drumSampler;
     let drumCells = useGlobalStore.getState().drumCells;
     let drumTypesToPlay = drumCells[0]
         .filter((cell) => cell.alive)
         .map((cell) => cell.drumType);
+    let synthCheckIfPlay: SynthCheckIfPlay[] = [];
 
     useFrame((_, delta) => {
         if (playState === "stopped") {
@@ -268,23 +269,42 @@ export default function Timekeeper() {
             useGlobalStore.getState().noteGroupCells[nextNoteGroupIndex];
         globallyEnabledSequencerRows =
             useGlobalStore.getState().globallyEnabledSequencerRows;
-        noteIndicesToPlay = Object.values(sequencerCells)
-            .filter(
-                (cell) =>
+        synthCheckIfPlay = Object.entries(sequencerCells)
+            .filter(([, cell]) => {
+                return (
                     cell.x === sequencerIndexRef.current &&
                     aliveStates.includes(cell.state) &&
                     currentNoteGroup.enabledRows[cell.y] &&
                     globallyEnabledSequencerRows[cell.y]
-            )
-            .map((cell) => cell.y);
-        frequenciesToPlay = noteIndicesToPlay.map(
-            (noteIndex) => currentNoteGroup.notes[noteIndex].frequency
-        );
+                );
+            })
+            .map(([key, cell]) => ({
+                key: parseInt(key),
+                noteIndex: cell.y,
+                played: false,
+            }));
         voiceMode = useGlobalStore.getState().voiceMode;
-        if (synth && frequenciesToPlay.length > 0) {
-            playSynthNotes(synth, frequenciesToPlay, voiceMode, noteDuration);
+        if (synth && synthCheckIfPlay.length) {
+            synthCheckIfPlay = playSynthNotes(
+                synth,
+                synthCheckIfPlay,
+                currentNoteGroup.notes,
+                voiceMode,
+                noteDuration
+            );
+            sequencerCells = {
+                ...sequencerCells,
+                ...Object.fromEntries(
+                    synthCheckIfPlay.map(({ key, played }) => [
+                        key,
+                        {
+                            ...sequencerCells[key],
+                            playing: played,
+                        } as SequencerCell,
+                    ])
+                ),
+            };
         }
-
         drumSampler = useGlobalStore.getState().drumSampler;
         drumCells = useGlobalStore.getState().drumCells;
         drumTypesToPlay = drumCells[sequencerIndexRef.current]
@@ -293,7 +313,10 @@ export default function Timekeeper() {
         if (drumSampler && drumTypesToPlay.length > 0) {
             playDrums(drumSampler, drumTypesToPlay, drumDuration);
         }
-        if (Object.keys(cellsToUpdate).length) {
+        if (
+            Object.keys(cellsToUpdate).length ||
+            synthCheckIfPlay.some(({ played }) => played)
+        ) {
             useGlobalStore.setState((state) => {
                 state.sequencerCells = sequencerCells;
             });

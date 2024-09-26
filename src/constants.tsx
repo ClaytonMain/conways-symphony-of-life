@@ -61,7 +61,7 @@ const latheGeometryPoints = [
 export const knobGeometry = new THREE.LatheGeometry(latheGeometryPoints, 13);
 export const buttonMaterial = new THREE.MeshStandardMaterial({
     color: colors.instrumentButtons,
-    toneMapped: false,
+    // toneMapped: false,
 });
 export const genericCircleGeometry = new THREE.CircleGeometry(0.5, 16);
 export const knobDotMaterial = new THREE.MeshBasicMaterial({
@@ -85,6 +85,6 @@ export const staticLabelMaterialElement = (
 export const volumeOptions = [
     -600,
     ...Array.from({ length: 10 }, (_, i) =>
-        Math.round(13 * Math.log10(i + 1) - 15)
+        Math.round(20 * Math.log(0.0694524 * (i + 1)))
     ),
 ];

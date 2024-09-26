@@ -101,6 +101,11 @@ export type RoundedBoxProps = {
     creaseAngle?: number;
 };
 export type DisplayVariant = "show" | "hideSlow" | "hideFast";
+export type SynthCheckIfPlay = {
+    key: number;
+    noteIndex: number;
+    played: boolean;
+};
 
 // Old code below:
 export interface CellRecord {

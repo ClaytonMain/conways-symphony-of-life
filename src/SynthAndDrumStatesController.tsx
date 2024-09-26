@@ -169,6 +169,7 @@ export default function SynthAndDrumStatesController() {
                     sustain,
                     release,
                 },
+                portamento: 0.05,
             }).toDestination();
         }
         if (!_synth) return;
@@ -229,6 +230,7 @@ export default function SynthAndDrumStatesController() {
                     sustain,
                     release,
                 },
+                portamento: 0.05,
             }).toDestination();
             // }).connect(_equalizer);
         }

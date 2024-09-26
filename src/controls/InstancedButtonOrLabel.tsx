@@ -1,4 +1,5 @@
 import { Instance, Text, useCursor } from "@react-three/drei";
+import { ThreeEvent } from "@react-three/fiber";
 import { useState } from "react";
 import * as THREE from "three";
 import { DisplayVariant, PointerEventTypes } from "../sharedTypes";
@@ -82,12 +83,18 @@ export default function InstancedButtonOrLabel({
         }
     }
 
+    function handleOnClick(e: ThreeEvent<MouseEvent>) {
+        if (onClick === undefined) return;
+        e.stopPropagation();
+        onClick();
+    }
+
     return (
         <>
             <Instance
                 position={vectorPosition}
                 scale={instanceScale}
-                onClick={onClick}
+                onClick={(e) => handleOnClick(e)}
                 onPointerOver={() =>
                     handlePointerEvents({ pointerEventType: "over" })
                 }

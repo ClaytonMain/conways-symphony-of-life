@@ -1,45 +1,66 @@
 import * as Tone from "tone";
 import { drumNoteMap, drumTypes } from "./constants";
-import { DrumCell, DrumType, VoiceMode } from "./sharedTypes";
+import {
+    DrumCell,
+    DrumType,
+    NoteGroupNote,
+    SynthCheckIfPlay,
+    VoiceMode,
+} from "./sharedTypes";
 
 export function playSynthNotes(
     synth: Tone.PolySynth | Tone.MonoSynth,
-    frequencies: Tone.FrequencyClass<number>[],
+    synthCheckIfPlay: SynthCheckIfPlay[],
+    notes: NoteGroupNote[],
     voiceMode: VoiceMode,
     noteDuration: number
-) {
+): SynthCheckIfPlay[] {
+    const synthCheckedIfPlay: SynthCheckIfPlay[] = synthCheckIfPlay;
     if (voiceMode === "poly") {
         if (!(synth instanceof Tone.PolySynth)) {
             console.error("Synth is not a PolySynth.");
-            return;
+            return synthCheckedIfPlay;
         }
-        const playedNotes: Tone.FrequencyClass<number>[] = [];
-        if (synth instanceof Tone.PolySynth) {
-            for (const frequency of frequencies) {
-                if (
-                    playedNotes.includes(frequency) ||
-                    synth.activeVoices >= synth.maxPolyphony
-                ) {
-                    continue;
-                }
-                synth.triggerAttackRelease(
-                    frequency.toFrequency(),
-                    noteDuration
-                );
-                playedNotes.push(frequency);
+        const playedFrequencies: Tone.FrequencyClass<number>[] = [];
+        let frequency: Tone.FrequencyClass<number>;
+        synthCheckIfPlay.forEach(({ noteIndex }, i) => {
+            frequency = notes[noteIndex].frequency;
+            if (
+                playedFrequencies.includes(frequency) ||
+                synth.activeVoices >= synth.maxPolyphony
+            ) {
+                return;
             }
-        }
+            synth.triggerAttackRelease(frequency.toFrequency(), noteDuration);
+            playedFrequencies.push(frequency);
+            synthCheckedIfPlay[i].played = true;
+        });
     } else {
         if (!(synth instanceof Tone.MonoSynth)) {
             console.error("Synth is not a MonoSynth.");
-            return;
+            return synthCheckedIfPlay;
         }
-        /**
-         * @todo Implement MonoSynth play.
-         * Will need to determine which note to play outside of this
-         * function so that we can tell which cell to light up.
-         */
+        let playedIndex: number | undefined;
+        if (voiceMode === "monotop") {
+            playedIndex = synthCheckIfPlay.length - 1;
+        } else if (voiceMode === "monobottom") {
+            playedIndex = 0;
+        } else if (voiceMode === "monomid") {
+            playedIndex = Math.floor(synthCheckIfPlay.length / 2);
+        } else if (voiceMode === "monorandom") {
+            playedIndex = Math.floor(Math.random() * synthCheckIfPlay.length);
+        }
+        if (playedIndex !== undefined) {
+            synth.triggerAttackRelease(
+                notes[
+                    synthCheckIfPlay[playedIndex].noteIndex
+                ].frequency.toFrequency(),
+                noteDuration
+            );
+            synthCheckedIfPlay[playedIndex].played = true;
+        }
     }
+    return synthCheckedIfPlay;
 }
 
 export function playDrums(

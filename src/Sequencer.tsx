@@ -75,7 +75,9 @@ function SequencerCell({ index }: SequencerCellProps) {
         const unsubPlaying = useGlobalStore.subscribe(
             (state) => state.sequencerCells[index].playing,
             (value) => {
-                setPlaying(value);
+                if (value !== playing) {
+                    setPlaying(value);
+                }
             }
         );
         return () => {
@@ -87,6 +89,12 @@ function SequencerCell({ index }: SequencerCellProps) {
             (state) => state.currentSequencerIndex,
             (value) => {
                 setSequenceColumnActive(value === cellRecord.x);
+                if (value !== cellRecord.x && playing) {
+                    setPlaying(false);
+                    useGlobalStore.setState((state) => {
+                        state.sequencerCells[index].playing = false;
+                    });
+                }
             }
         );
         return () => {
