@@ -986,40 +986,74 @@ export default function Touchscreen({
     position?: [number, number, number];
 }) {
     const planeSize: [number, number] = [44.3, 21.6];
+    // const [roughnessMap, normalMap] = useTexture([
+    //     "textures/Metal027_1K-JPG/Metal027_1K-JPG_Roughness.jpg",
+    //     "textures/Metal027_1K-JPG/Metal027_1K-JPG_NormalGL.jpg",
+    // ]);
+    // roughnessMap.wrapS = THREE.RepeatWrapping;
+    // roughnessMap.wrapT = THREE.RepeatWrapping;
+    // normalMap.wrapS = THREE.RepeatWrapping;
+    // normalMap.wrapT = THREE.RepeatWrapping;
+    const materialProps = useTexture({
+        roughnessMap: "textures/Metal027_1K-JPG/Metal027_1K-JPG_Roughness.jpg",
+        normalMap: "textures/Metal027_1K-JPG/Metal027_1K-JPG_NormalGL.jpg",
+    });
+    materialProps.roughnessMap.wrapS = THREE.RepeatWrapping;
+    materialProps.roughnessMap.wrapT = THREE.RepeatWrapping;
+    materialProps.normalMap.wrapS = THREE.RepeatWrapping;
+    materialProps.normalMap.wrapT = THREE.RepeatWrapping;
     return (
-        <mesh
-            position={position}
-            onPointerDown={() => {
-                useGlobalStore.setState({ cameraControlsEnabled: false });
-            }}
-        >
-            <planeGeometry args={planeSize} />
-            <meshBasicMaterial toneMapped={false}>
-                <RenderTexture
-                    attach="map"
-                    anisotropy={16}
-                >
-                    <OrthographicCamera
-                        makeDefault
-                        position={[0, 0, 10]}
-                        zoom={1}
-                        left={-planeSize[0] / 2}
-                        right={planeSize[0] / 2}
-                        top={planeSize[1] / 2}
-                        bottom={-planeSize[1] / 2}
-                    />
-                    <color
-                        attach="background"
-                        args={[colors.background]}
-                    />
-                    <Displays />
-                    <Center position={[0, 0, -0.2]}>
-                        <Sequencer />
-                        <NoteGroups />
-                        <DrumSequencer />
-                    </Center>
-                </RenderTexture>
-            </meshBasicMaterial>
-        </mesh>
+        <group position={position}>
+            <mesh
+                position={[0, 0, 0.3]}
+                scale={[...planeSize, 0.1]}
+            >
+                <boxGeometry />
+                <meshStandardMaterial
+                    {...materialProps}
+                    roughnessMap-repeat={[0.5, 0.5]}
+                    normalMap-repeat={[0.5, 0.5]}
+                    normalScale={new THREE.Vector2(0.05, 0.05)}
+                    color={"grey"}
+                    transparent
+                    opacity={0.3}
+                    metalness={0.9}
+                    roughness={0.01}
+                />
+            </mesh>
+            <mesh
+                onPointerDown={() => {
+                    useGlobalStore.setState({ cameraControlsEnabled: false });
+                }}
+            >
+                <planeGeometry args={planeSize} />
+                <meshBasicMaterial toneMapped={false}>
+                    <RenderTexture
+                        attach="map"
+                        anisotropy={16}
+                    >
+                        <OrthographicCamera
+                            makeDefault
+                            position={[0, 0, 10]}
+                            zoom={1}
+                            left={-planeSize[0] / 2}
+                            right={planeSize[0] / 2}
+                            top={planeSize[1] / 2}
+                            bottom={-planeSize[1] / 2}
+                        />
+                        <color
+                            attach="background"
+                            args={[colors.background]}
+                        />
+                        <Displays />
+                        <Center position={[0, 0, -0.2]}>
+                            <Sequencer />
+                            <NoteGroups />
+                            <DrumSequencer />
+                        </Center>
+                    </RenderTexture>
+                </meshBasicMaterial>
+            </mesh>
+        </group>
     );
 }
