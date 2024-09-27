@@ -36,10 +36,7 @@ export default function Instrument(props: JSX.IntrinsicElements["group"]) {
             >
                 <meshStandardMaterial
                     {...materialProps}
-                    // displacementScale={0.1}
                     color={"#1d1d26"}
-                    // metalness={0.2}
-                    // roughness={0.8}
                 />
             </mesh>
         </group>

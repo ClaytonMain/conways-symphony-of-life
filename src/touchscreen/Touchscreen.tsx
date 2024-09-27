@@ -986,22 +986,6 @@ export default function Touchscreen({
     position?: [number, number, number];
 }) {
     const planeSize: [number, number] = [44.3, 21.6];
-    // const [roughnessMap, normalMap] = useTexture([
-    //     "textures/Metal027_1K-JPG/Metal027_1K-JPG_Roughness.jpg",
-    //     "textures/Metal027_1K-JPG/Metal027_1K-JPG_NormalGL.jpg",
-    // ]);
-    // roughnessMap.wrapS = THREE.RepeatWrapping;
-    // roughnessMap.wrapT = THREE.RepeatWrapping;
-    // normalMap.wrapS = THREE.RepeatWrapping;
-    // normalMap.wrapT = THREE.RepeatWrapping;
-    const materialProps = useTexture({
-        roughnessMap: "textures/Metal027_1K-JPG/Metal027_1K-JPG_Roughness.jpg",
-        normalMap: "textures/Metal027_1K-JPG/Metal027_1K-JPG_NormalGL.jpg",
-    });
-    materialProps.roughnessMap.wrapS = THREE.RepeatWrapping;
-    materialProps.roughnessMap.wrapT = THREE.RepeatWrapping;
-    materialProps.normalMap.wrapS = THREE.RepeatWrapping;
-    materialProps.normalMap.wrapT = THREE.RepeatWrapping;
     return (
         <group position={position}>
             <mesh
@@ -1010,13 +994,9 @@ export default function Touchscreen({
             >
                 <boxGeometry />
                 <meshStandardMaterial
-                    {...materialProps}
-                    roughnessMap-repeat={[0.5, 0.5]}
-                    normalMap-repeat={[0.5, 0.5]}
-                    normalScale={new THREE.Vector2(0.05, 0.05)}
                     color={"grey"}
                     transparent
-                    opacity={0.3}
+                    opacity={0.2}
                     metalness={0.9}
                     roughness={0.01}
                 />
