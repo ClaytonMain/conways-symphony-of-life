@@ -144,6 +144,7 @@ function NoteGroupsControls({
                 limit={1}
                 geometry={genericBoxGeometry}
                 material={buttonMaterial}
+                frustumCulled={false}
             >
                 <InstancedButtonOrLabel
                     position={[2, -6, 0]}
@@ -304,6 +305,7 @@ function CellControls({ position }: { position: [number, number, number] }) {
                 limit={2}
                 geometry={genericBoxGeometry}
                 material={buttonMaterial}
+                frustumCulled={false}
             >
                 <InstancedButtonOrLabel
                     position={[2, -5.5, 0]}
@@ -652,6 +654,7 @@ function TimingControls({ position }: { position: [number, number, number] }) {
                 limit={2}
                 geometry={genericBoxGeometry}
                 material={buttonMaterial}
+                frustumCulled={false}
             >
                 <InstancedButtonOrLabel
                     position={[0, -5.5, 0.2]}
