@@ -8,7 +8,6 @@ import {
     staticLabelMaterialElement,
 } from "../constants";
 import { useGlobalStore } from "../stores/useGlobalStore";
-import "./Controls.css";
 
 interface ValuesKnobProps {
     values: Array<number | string>;

@@ -2,7 +2,6 @@ import {
     AccumulativeShadows,
     Bounds,
     Environment,
-    Loader,
     OrbitControls,
     PerformanceMonitor,
     RandomizedLight,
@@ -18,6 +17,8 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import "./App.css";
 import DetectClick from "./DetectClick";
 import Instrument from "./Instrument";
+import LoadProgressListener from "./LoadProgressListener";
+import LoadingScreen from "./LoadingScreen";
 import PlayStateController from "./PlayStateController";
 import ShortcutWrapper from "./ShortcutWrapper";
 import SynthAndDrumStatesController from "./SynthAndDrumStatesController";
@@ -80,8 +81,8 @@ function App() {
         <>
             <SpeedInsights />
             <DetectClick />
+            <LoadingScreen />
             <Canvas
-                // orthographic
                 shadows
                 dpr={dpr}
                 camera={{ position: [0.03, 10, 1], fov: 35 }}
@@ -92,10 +93,7 @@ function App() {
                 <OrbitControls
                     ref={orbitControlsRef}
                     makeDefault
-                    // enableRotate={false}
-                    // maxAzimuthAngle={0.05}
-                    // minAzimuthAngle={-0.05}
-                    maxPolarAngle={Math.PI / 2}
+                    maxPolarAngle={Math.PI / 2 - 0.3}
                     minPolarAngle={0}
                     target0={new THREE.Vector3(0, 0, 0)}
                     mouseButtons={{
@@ -103,8 +101,7 @@ function App() {
                         MIDDLE: THREE.MOUSE.PAN,
                         RIGHT: undefined,
                     }}
-                    // screenSpacePanning
-                    minDistance={1}
+                    minDistance={1.5}
                     maxDistance={10}
                     onChange={(e) => {
                         if (!e) return;
@@ -127,14 +124,15 @@ function App() {
                             setAccShadowResolution(accShadowResolution / 2);
                     }}
                 />
+
                 <Suspense fallback={null}>
+                    <LoadProgressListener />
                     <ShortcutWrapper>
-                        <Environment preset="city" />
+                        <Environment files={"images/city.hdr"} />
                         <color
                             attach="background"
                             args={[colors.background]}
                         />
-                        {/* <ambientLight intensity={1} /> */}
                         <Timekeeper />
                         <PlayStateController />
                         <SynthAndDrumStatesController />
@@ -183,7 +181,6 @@ function App() {
                 </Suspense>
                 <Stats />
             </Canvas>
-            <Loader />
         </>
     );
 }

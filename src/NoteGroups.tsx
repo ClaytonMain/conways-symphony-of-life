@@ -12,7 +12,6 @@ import {
     staticLabelMaterialElement,
 } from "./constants";
 import InstancedButtonOrLabel from "./controls/InstancedButtonOrLabel";
-import "./NoteGroups.css";
 import { PointerEventTypes, ShortcutEnum } from "./sharedTypes";
 import { useGlobalStore } from "./stores/useGlobalStore";
 
@@ -106,11 +105,11 @@ function NoteGroupCellComponent({
         // const ctrlKey = e.ctrlKey;
 
         if (["down", "over"].includes(pointerEventType)) {
-            if (useGlobalStore.getState().cameraControlsEnabled) return;
             if (useGlobalStore.getState().cellsIgnorePointerEvents) return;
             if (pointerEventType === "over") {
                 setHovered(true);
             }
+            if (useGlobalStore.getState().cameraControlsEnabled) return;
             if (noteGroupSelectMode === null) {
                 if (primaryMouse) {
                     if (!active) {

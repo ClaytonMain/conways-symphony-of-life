@@ -83,11 +83,11 @@ function DrumCell({ x, y, cellEditMode }: DrumCellProps) {
         const secondaryMouse = buttonsBinary.charAt(3) === "1";
 
         if (["down", "over"].includes(pointerEventType)) {
-            if (useGlobalStore.getState().cameraControlsEnabled) return;
             if (useGlobalStore.getState().cellsIgnorePointerEvents) return;
             if (pointerEventType === "over") {
                 setHovered(true);
             }
+            if (useGlobalStore.getState().cameraControlsEnabled) return;
             if (cellEditMode === null) {
                 if (primaryMouse && !alive) {
                     useGlobalStore.setState((state) => {

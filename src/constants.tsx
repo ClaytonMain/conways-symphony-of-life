@@ -1,12 +1,5 @@
 import * as THREE from "three";
-import {
-    CellStates,
-    DrumType,
-    GameWrapMode,
-    NoteAccidental,
-    NoteName,
-    NoteOctave,
-} from "./sharedTypes";
+import { CellStates, DrumType, GameWrapMode } from "./sharedTypes";
 
 export const initialSequencerLength = 32;
 export const initialSequencerHeight = 16;
@@ -18,26 +11,8 @@ export const drumNoteMap: Record<DrumType, "A1" | "A2" | "A3"> = {
     Snare: "A2",
     HiHat: "A3",
 };
-export const sequencerScale = 0.3;
 export const sequencerCellScale = 0.9;
 export const aliveStates: CellStates[] = ["alive", "invincible"];
-export const chordRoots: Array<`${NoteName}${NoteAccidental}`> = [
-    "C",
-    "C#",
-    "D",
-    "D#",
-    "E",
-    "F",
-    "F#",
-    "G",
-    "G#",
-    "A",
-    "A#",
-    "B",
-];
-export const octaves: NoteOctave[] = [
-    -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-];
 export const colors = {
     background: "#eeaa44",
     playingCell: "#ffffff",
@@ -68,9 +43,6 @@ export const knobDotMaterial = new THREE.MeshBasicMaterial({
     color: colors.highlight1,
 });
 export const arrowGeometry = new THREE.CylinderGeometry(0.1, 0.1, 0.5, 3);
-export const arrowMaterial = new THREE.MeshBasicMaterial({
-    color: colors.highlight1,
-});
 export const buttonLabelElementMaterial = new THREE.MeshBasicMaterial({
     color: colors.lightText,
 });

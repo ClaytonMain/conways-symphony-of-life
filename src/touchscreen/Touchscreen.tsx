@@ -59,7 +59,7 @@ const overlayVariants: DisplayVariants = {
     ...displayVariants,
     show: {
         ...displayVariants.show,
-        opacity: 0.5,
+        opacity: 0.9,
     },
 };
 

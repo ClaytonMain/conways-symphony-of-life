@@ -71,6 +71,7 @@ interface GlobalStoreTypes {
     pendingNoteGroup: NoteGroupCell | null;
     playingNoteGroupNotesTimestamp: number | null;
     cameraControlsEnabled: boolean;
+    loadingPercent: number;
     _placeholderValue: null;
     _placeholderSet: () => void;
     _placeholderGet: () => null;
@@ -130,6 +131,7 @@ export const useGlobalStore = create<GlobalStoreTypes>()(
             pendingNoteGroup: null,
             playingNoteGroupNotesTimestamp: null,
             cameraControlsEnabled: true,
+            loadingPercent: 0,
             _placeholderValue: null,
             _placeholderSet: () => {
                 set((state) => {
