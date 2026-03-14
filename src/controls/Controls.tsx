@@ -227,7 +227,7 @@ function CellControls({ position }: { position: [number, number, number] }) {
     function handleNptValueChange(index: number) {
         useGlobalStore.setState((state) => {
             state.npt = nptKnobChangeOptions.options[index];
-            state.displayLabel = "Notes Per Group";
+            state.displayLabel = "Notes Per Tick";
             state.displayValue = nptKnobChangeOptions.displayLabels[index];
         });
         setNpt(nptKnobChangeOptions.options[index]);
