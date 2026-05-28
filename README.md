@@ -1,5 +1,9 @@
 # Conway's Symphony of Life
 
+Link: [Conway's Symphony of Life](https://conways-symphony-of-life.vercel.app/)
+
+It's a synthesizer powered by Conway's Game of Life.
+
 I'll come back to this project... someday...
 
 ## NOT RECOMMENDED ON MOBILE
